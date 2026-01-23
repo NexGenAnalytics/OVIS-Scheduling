@@ -11,6 +11,10 @@ the total memory used by all runs never exceeds the limit.
 `scheduleILP.py` offers a more refined approach that minimizes the total runtime (the "makespan")
 while keeping total memory usage and CPU utilization under user-defined limits.
 
+>[!NOTE]
+> Only the ILP approach considers CPU utilization.
+> The heuristic approach only considers memory usage.
+
 ### Install
 
 You'll need the dependencies in `requirements.txt`. Install them with:

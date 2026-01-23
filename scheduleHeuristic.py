@@ -11,11 +11,12 @@ DATA_DIR = os.path.join(os.path.dirname(__file__), 'data')
 PLOTS_DIR = os.path.join(os.path.dirname(__file__), 'plots', 'heuristic')
 os.makedirs(PLOTS_DIR, exist_ok=True)
 
-DATA_FILES= [os.path.join(DATA_DIR, f) for f in os.listdir(DATA_DIR) if f.endswith('.csv')]
-
-DATASETS = {
-    f.split(".")[0].split("/")[-1]: np.loadtxt(f, delimiter=',') for f in DATA_FILES
+MEMORY_FILES = [os.path.join(DATA_DIR, f) for f in os.listdir(DATA_DIR) if f.startswith('memory_') and f.endswith('.csv')]
+MEMORY_DATASETS = {
+    f.split(".")[0].split("/")[-1].replace('memory_', ''): np.loadtxt(f, delimiter=',') for f in MEMORY_FILES
 }
+
+TIMESTEPS = np.loadtxt(os.path.join(DATA_DIR, 't.csv'), delimiter=',')
 
 def clearPlots():
     """Clears existing plots in the plots directory."""
@@ -176,9 +177,8 @@ def checkResults(timesteps, data: dict):
 
 def schedule():
     clearPlots()
-    timesteps = DATASETS["t"]
-    memory_curves = {label: data for label, data in DATASETS.items() if label != "t"}
-    n_iterations, shifted_timesteps, shifted_memory_curves = recursiveMax(timesteps, memory_curves, MAX_MEMORY, BASELINE_LABEL)
+    memory_curves = {label: data for label, data in MEMORY_DATASETS.items()}
+    n_iterations, shifted_timesteps, shifted_memory_curves = recursiveMax(TIMESTEPS, memory_curves, MAX_MEMORY, BASELINE_LABEL)
     print(f"Scheduling complete after {n_iterations} iterations.")
 
     checkResults(shifted_timesteps, shifted_memory_curves)
