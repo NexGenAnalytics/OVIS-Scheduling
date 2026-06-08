@@ -13,7 +13,15 @@ while keeping total memory usage and CPU utilization under user-defined limits.
 
 >[!NOTE]
 > Only the ILP approach considers CPU utilization.
-> The heuristic approach only considers memory usage.
+> The heuristic approach only considers memory usage.cc
+
+### Setup virtual environment
+
+```sh
+python3 -m venv venv
+source .venv/bin/activate # for Linux and Mac
+.\venv\Scripts\activate   # for Windows
+```
 
 ### Install
 
@@ -64,3 +72,9 @@ and then shifts non-baseline plots from that point to the nearest minimum of the
 > infinite loops under tight memory conditions.
 > We have hard-coded the algorithm to exit
 > after 25 iterations to prevent this.
+
+### Exit virtual environment
+
+```sh
+deactivate
+```
