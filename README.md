@@ -18,7 +18,7 @@ while keeping total memory usage and CPU utilization under user-defined limits.
 ### Setup virtual environment
 
 ```sh
-python3 -m venv venv
+python3 -m venv .venv
 source .venv/bin/activate # for Linux and Mac
 .\venv\Scripts\activate   # for Windows
 ```
