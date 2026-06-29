@@ -18,9 +18,9 @@ while keeping total memory usage and CPU utilization under user-defined limits.
 ### Setup virtual environment
 
 ```sh
-python3 -m venv venv
+python3 -m venv .venv
 source .venv/bin/activate # for Linux and Mac
-.\venv\Scripts\activate   # for Windows
+.\.venv\Scripts\activate   # for Windows
 ```
 
 ### Install
@@ -41,7 +41,7 @@ python generateData.py
 
 ### Run ILP
 
-Run the ILP scheduler with:
+Run the ILP (Integer Linear Programming) scheduler with:
 
 ```sh
 python scheduleILP.py
@@ -72,6 +72,23 @@ and then shifts non-baseline plots from that point to the nearest minimum of the
 > infinite loops under tight memory conditions.
 > We have hard-coded the algorithm to exit
 > after 25 iterations to prevent this.
+
+### Run CP-SAT
+
+Run the CP-SAT (Constraint Programming and SATisfiability) approach, run:
+
+```sh
+python scheduleCPSAT.py
+```
+
+### Run RCPS
+
+Run the RCPS (Resource-Constrained Project Scheduling) approach, run:
+
+```sh
+# TODO in serial
+# TODO in parallel
+```
 
 ### Exit virtual environment
 
