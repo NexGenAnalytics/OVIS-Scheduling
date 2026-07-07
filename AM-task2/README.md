@@ -1,21 +1,22 @@
+## What this folder help with
 
-# Task 2
+- Compare 2 input configuration
+- Populate a database from a folder of input configuration files
+- Search inside a database the closest job
 
-Labeling scheme to tie application parameters to mode.
+## Comparison methods
 
-## Method
-
-- Normalize into sets and Jaccard distance:
+- Normalize into sets then Jaccard distance:
 Measure of dissimilarity between two sets, derived directly from Jaccard
 similarity.
 
-- SimHash and Hamming Distance:
+- SimHash then Hamming Distance:
 Dimensionality-reduction algorithm that converts large datasets into compact
 binary fingerprints. SimHash ensures that similar inputs produce similar
 fingerprints. The Hamming distance is a metric used to measure the dissimilarity
 between two data sequences (like binary) of equal length.
 
-## Setup
+## Setup and usage
 
 ```sh
 pwd # [...]/AM-task2
@@ -26,8 +27,20 @@ source .venv/bin/activate # for Linux and Mac
 
 (.venv) pip install -r requirements.txt
 
-(.venv) python script.py [path1] [path2]
-# example: python script.py ./configs/DarmaPerformance.txt ./configs/PressioDebug.txt
+(.venv) python src/compare.py [config_file_path1] [config_file_path2]
+# Compute Jaccard and Hamming distance
+# example: python src/compare.py configs/DarmaPerformance.txt configs/PressioDebug.txt
+# result: display in terminal
+
+(.venv) python src/save.py [config_folder_path]
+# Create and populate database
+# example: python src/save.py configs/
+# result: file db.json
+
+(.venv) python src/search.py [db_path] [config_file_path]
+# Find the closest job
+# example: python src/search.py db.json configs/MyConfig.txt
+# result: display in terminal
 
 (.venv) deactivate
 ```
