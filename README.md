@@ -85,15 +85,6 @@ Run the CP-SAT (Constraint Programming and SATisfiability) approach, run:
 python scheduleCPSAT.py
 ```
 
-### Run RCPS
-
-Run the RCPS (Resource-Constrained Project Scheduling) approach, run:
-
-```sh
-# TODO in serial
-# TODO in parallel
-```
-
 ### Exit virtual environment
 
 ```sh
