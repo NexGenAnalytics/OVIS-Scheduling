@@ -5,14 +5,15 @@ Labeling scheme to tie application parameters to mode.
 
 ## Method
 
-- Jaccard distance:
+- Normalize into sets and Jaccard distance:
 Measure of dissimilarity between two sets, derived directly from Jaccard
 similarity.
 
-- SimHash:
+- SimHash and Hamming Distance:
 Dimensionality-reduction algorithm that converts large datasets into compact
 binary fingerprints. SimHash ensures that similar inputs produce similar
-fingerprints.
+fingerprints. The Hamming distance is a metric used to measure the dissimilarity
+between two data sequences (like binary) of equal length.
 
 ## Setup
 

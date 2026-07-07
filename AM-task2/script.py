@@ -62,4 +62,8 @@ if __name__ == "__main__":
 
   print(f"Between *{path1.split('/')[-1]}* and *{path2.split('/')[-1]}*:")
   print(f"Jaccard distance (0 same - 1 different): {jaccard_distance(a, b)}")
-  print(f"Hamming distance (0 same - >16 different): {hamming_distance(simhash(a), simhash(b))}")
+
+  A = simhash(a)
+  B = simhash(b)
+
+  print(f"Hamming distance (0 same - >16 different): {hamming_distance(A, B)}")
