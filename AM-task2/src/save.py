@@ -22,12 +22,12 @@ if __name__ == "__main__":
       "metadata": {
         "cpu": {
           "utilization": "",
-        }
+        },
         "memory": {
           "usage": "",
           "occupancy": ""
-        }
-        "network": ""
+        },
+        "network": "",
       }
     }
     objects.append(obj)
