@@ -1,0 +1,4 @@
+cmake -S . -B build-cuda \
+  -DCMAKE_BUILD_TYPE=Release \
+  -DKokkos_ENABLE_CUDA=ON \
+  -DKokkos_ARCH_AMPERE80=ON

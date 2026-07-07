@@ -1,0 +1,7 @@
+cmake \
+  -DCMAKE_BUILD_TYPE=Release \
+  -DTPL_ENABLE_MPI=ON \
+  -DTPL_ENABLE_BLAS=ON \
+  -DTPL_ENABLE_LAPACK=ON \
+  -DTrilinos_ENABLE_Tpetra=ON \
+  -DTrilinos_ENABLE_Belos=ON

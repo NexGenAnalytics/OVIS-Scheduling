@@ -1,0 +1,6 @@
+cmake
+-S .
+-B build-serial
+-DCMAKE_BUILD_TYPE=Debug
+-DKokkos_ENABLE_SERIAL=ON
+-DKokkos_ENABLE_DEBUG=ON
