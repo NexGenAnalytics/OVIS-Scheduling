@@ -3,7 +3,7 @@
 - Compare 2 input configuration.
 - Populate a database from a folder of input configuration files.
 - Search inside a database the closest job.
-- Simple prediction based on the execution command.
+- Simple prediction based on the execution command and others.
 
 ## Comparison methods
 
@@ -21,6 +21,7 @@ between two data sequences (like binary) of equal length.
 
 - From execution command.
 - From tensor/matrix given.
+-
 
 ## Setup and usage
 
@@ -38,9 +39,9 @@ source .venv/bin/activate # for Linux and Mac
 # example: python src/compare.py configs/DarmaPerformance.txt configs/PressioDebug.txt
 # result: display in terminal
 
-(.venv) python src/prediction.py [command_file_path]
-# Predict execution values from command
-# example: python src/prediction.py commands/KokkosCuda.txt
+(.venv) python src/prediction.py [execution_folder_path]
+# Predict execution values
+# example: python src/prediction.py executions/KokkosCuda/
 # result: display in terminal
 
 (.venv) python src/save.py [config_folder_path]
@@ -58,5 +59,5 @@ source .venv/bin/activate # for Linux and Mac
 
 ## Notes
 
-- `commands/`: commands that effectively run code (needed to measure utilization/usage/occupancy/network).
+- `commands/`: folders to run code (contains the command, some data, etc).
 - `configs/`: CMake flags only choose what gets built.
