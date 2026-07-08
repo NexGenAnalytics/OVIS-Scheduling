@@ -1,8 +1,9 @@
 ## What this folder help with
 
-- Compare 2 input configuration
-- Populate a database from a folder of input configuration files
-- Search inside a database the closest job
+- Compare 2 input configuration.
+- Populate a database from a folder of input configuration files.
+- Search inside a database the closest job.
+- Simple prediction based on the execution command.
 
 ## Comparison methods
 
@@ -15,6 +16,11 @@ Dimensionality-reduction algorithm that converts large datasets into compact
 binary fingerprints. SimHash ensures that similar inputs produce similar
 fingerprints. The Hamming distance is a metric used to measure the dissimilarity
 between two data sequences (like binary) of equal length.
+
+## Prediction methods
+
+- From execution command.
+- From tensor/matrix given.
 
 ## Setup and usage
 
@@ -32,6 +38,11 @@ source .venv/bin/activate # for Linux and Mac
 # example: python src/compare.py configs/DarmaPerformance.txt configs/PressioDebug.txt
 # result: display in terminal
 
+(.venv) python src/prediction.py [command_file_path]
+# Predict execution values from command
+# example: python src/prediction.py commands/KokkosCuda.txt
+# result: display in terminal
+
 (.venv) python src/save.py [config_folder_path]
 # Create and populate database
 # example: python src/save.py configs/
@@ -44,3 +55,8 @@ source .venv/bin/activate # for Linux and Mac
 
 (.venv) deactivate
 ```
+
+## Notes
+
+- `commands/`: commands that effectively run code (needed to measure utilization/usage/occupancy/network).
+- `configs/`: CMake flags only choose what gets built.
