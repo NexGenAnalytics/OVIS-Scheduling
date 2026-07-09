@@ -1,0 +1,6 @@
+cmake \
+  -DCMAKE_BUILD_TYPE=Debug \
+  -DTPL_ENABLE_MPI=ON \
+  -DTrilinos_ENABLE_DEBUG=ON \
+  -DTrilinos_ENABLE_TESTS=ON \
+  -DTrilinos_ENABLE_Epetra=ON

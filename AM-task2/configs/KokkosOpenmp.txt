@@ -1,0 +1,6 @@
+cmake
+-S .
+-B build-openmp
+-DCMAKE_BUILD_TYPE=Release
+-DKokkos_ENABLE_OPENMP=ON
+-DKokkos_ARCH_ZEN3=ON

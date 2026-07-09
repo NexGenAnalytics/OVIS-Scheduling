@@ -1,0 +1,5 @@
+cmake \
+  -DCMAKE_BUILD_TYPE=Debug \
+  -DVT_MPI=ON \
+  -DVT_TRACE=ON \
+  -DVT_DIAGNOSTICS=ON

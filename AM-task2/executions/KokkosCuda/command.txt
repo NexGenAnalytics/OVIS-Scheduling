@@ -1,0 +1,3 @@
+./build-cuda/spmv \
+  --matrix poisson_1000.mtx \
+  --iterations 500
