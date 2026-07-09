@@ -3,6 +3,7 @@ import sys
 
 from utils import normalize_deck, read_file, save_db, simhash
 
+"""
 if __name__ == "__main__":
   path = sys.argv[1]
   print(f"Save files from folder *{path}*:")
@@ -35,3 +36,4 @@ if __name__ == "__main__":
 
   save_db("./db.json", objects)
   print("Files saved!")
+"""

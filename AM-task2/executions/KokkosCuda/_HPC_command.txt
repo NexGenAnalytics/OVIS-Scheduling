@@ -1,8 +1,0 @@
-srun \
-  --nodes=1 \
-  --ntasks=1 \
-  --cpus-per-task=8 \
-  --gpus=1 \
-  ./build-cuda/spmv \
-  --matrix poisson_1000.mtx \
-  --iterations 500

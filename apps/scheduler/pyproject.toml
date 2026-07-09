@@ -1,0 +1,11 @@
+[project]
+name = "scheduler"
+version = "0.1.0"
+dependencies = [
+  "pulp==3.3.2",
+  "matplotlib==3.11.0",
+  "numpy==2.5.1",
+]
+
+[project.scripts]
+scheduler = "scheduler.cli:main"

@@ -1,5 +1,7 @@
 
+# TODO
 
+"""
 if __name__ == "__main__":
   print("prediction")
 
@@ -32,6 +34,6 @@ if __name__ == "__main__":
     # x vector = rows × 8
     # y vector = rows × 8
     # so => vector_memory = 2 × rows × 8
-
+"""
 
 
