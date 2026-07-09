@@ -1,3 +1,4 @@
+-e apps/database
 -e apps/hashing
 -e apps/modeling
 -e apps/scheduler
