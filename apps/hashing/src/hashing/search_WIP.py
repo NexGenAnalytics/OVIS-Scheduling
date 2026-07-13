@@ -1,6 +1,6 @@
 import sys
 
-from utils import jaccard_distance, normalize_deck, read_json, read_file
+from hashing.utils import jaccard_distance, normalize_deck, read_json, read_file
 
 def find_nearest(db, file):
   best = None
@@ -19,6 +19,7 @@ def find_nearest(db, file):
 
   return best
 
+"""
 if __name__ == "__main__":
   db_path = sys.argv[1]
   file_path = sys.argv[2]
@@ -29,3 +30,4 @@ if __name__ == "__main__":
 
   nearest = find_nearest(db, file)
   print(nearest)
+"""

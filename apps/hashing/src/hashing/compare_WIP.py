@@ -5,6 +5,7 @@ from utils import jaccard_distance, normalize_deck, read_file, simhash
 def hamming_distance(x: set, y: set):
   return (x ^ y).bit_count()
 
+"""
 if __name__ == "__main__":
   path1 = sys.argv[1]
   path2 = sys.argv[2]
@@ -28,3 +29,4 @@ if __name__ == "__main__":
   print(f"Hash B: {B}")
 
   print(f"Hamming distance (0 same - >16 different): {hamming_distance(A, B)}")
+"""

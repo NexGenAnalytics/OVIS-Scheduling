@@ -1,0 +1,9 @@
+[project]
+name = "hashing"
+version = "0.1.0"
+dependencies = [
+  "pathlib2==2.3.7.post1",
+]
+
+[project.scripts]
+hashing = "hashing.cli:main"

@@ -1,5 +1,0 @@
-cmake \
-  -DCMAKE_BUILD_TYPE=Release \
-  -DVT_MPI=ON \
-  -DVT_TRACE=OFF \
-  -DVT_TV=OFF
