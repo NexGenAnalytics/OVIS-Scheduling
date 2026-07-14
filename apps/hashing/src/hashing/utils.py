@@ -1,13 +1,19 @@
 import hashlib
-import json
+import sys
 
-def jaccard_distance(a: set, b: set):
-  if not a and not b:
-    return 0.0
+def normalize_deck(lines: list[str]) -> set:
+  """
+  Method:
+  - From a list of strings, extract "-D", clean, strip and stack them.
 
-  return 1 - len(a & b) / len(a | b)
+  Example 1:
+  - Input: ["cmake" "-S", ".", "-B", "build-cuda", "-DCMAKE_BUILD_TYPE=Release"]
+  - Output: { "CMAKE_BUILD_TYPE=Release" }
 
-def normalize_deck(lines: list[str]):
+  Example 2:
+  - Input: ["cmake", "-DCMAKE_BUILD_TYPE=Debug", "-DTPL_ENABLE_MPI=ON"]
+  - Output: { "CMAKE_BUILD_TYPE=Debug", "TPL_ENABLE_MPI=ON" }
+  """
   tokens = set()
 
   for line in lines:
@@ -22,32 +28,22 @@ def normalize_deck(lines: list[str]):
 
   return tokens
 
-def read_file(path: str):
+def read_file(path: str) -> list[str]:
+  """
+  Read text file, line by line.
+  """
   try:
     with open(path, "r") as file:
       lines = file.readlines()
       return lines
   except FileNotFoundError:
     print("File not found.")
-    return []
+    sys.exit(1) # failure
 
-def read_json(path: str):
-  try:
-    with open(path, "r", encoding="utf-8") as file:
-      db = json.load(file)
-      return db
-  except FileNotFoundError:
-    print("File not found.")
-    return []
-
-def save_db(path: str, data):
-  try:
-    with open(path, "w") as file:
-      json.dump(data, file, indent=4, default=list)
-  except FileNotFoundError:
-    print("File not found.")
-
-def simhash(tokens, bits=64):
+def simhash(tokens, bits=32) -> int:
+  """
+  Create hash from a set[str].
+  """
   vector = [0] * bits
 
   for token in tokens:

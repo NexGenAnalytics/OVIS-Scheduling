@@ -2,6 +2,13 @@
 
 `NexGen Analytics` work for Sandia `Open-source Varnish Information System`.
 
+## Apps
+
+- `database`, store predictions (from `modeling`) and hashs (from `hashing`).
+- `hashing`, [README](./apps/hashing/README.md).
+- `modeling`, create a prediction of CPU and memory usage.
+- `scheduler`, (issue #9).
+
 ## How to use
 
 ```bash
@@ -11,7 +18,7 @@ source .venv/bin/activate # for Linux and Mac
 
 (.venv) pip install -r requirements.txt
 
-(.venv) hashing
+(.venv) hashing --input [path]
 (.venv) modeling --input data/input/KokkosCuda/config.txt --output data/intermediate/modeling.json
 (.venv) scheduler
 
@@ -28,5 +35,4 @@ source .venv/bin/activate # for Linux and Mac
 
 ## Devs notes
 
-- In `apps/hashing`, there are some WIP scripts, to finish.
 - In `apps/scheduler`, there are some TODO scripts, to update with new archi.
