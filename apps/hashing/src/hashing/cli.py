@@ -1,4 +1,5 @@
 from hashing.utils import jaccard_distance
+# from database.jobs import create_job, list_jobs
 
 def main() -> None:
   print("hello")
@@ -10,3 +11,6 @@ def main() -> None:
 
   print(f"distance is {distance}")
 
+  # usage example
+  # job = create_job("job test #1")
+  # jobs = list_jobs()

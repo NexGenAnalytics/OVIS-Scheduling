@@ -2,6 +2,7 @@
 name = "hashing"
 version = "0.1.0"
 dependencies = [
+  "database==0.1.0",
   "pathlib2==2.3.7.post1",
 ]
 
