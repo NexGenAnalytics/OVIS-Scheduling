@@ -1,16 +1,18 @@
-from hashing.utils import jaccard_distance
-# from database.jobs import create_job, list_jobs
+import argparse
+
+from hashing.utils import normalize_deck, read_file, simhash
+from database.jobs import create_or_edit_job
 
 def main() -> None:
-  print("hello")
+  print("#, start")
+  parser = argparse.ArgumentParser()
+  parser.add_argument("--input", required=True)
+  args = parser.parse_args()
 
-  a = { 1, 2, 3 }
-  b = { 1, 2, 4 }
+  filename = args.input
+  lines = read_file(filename)
+  normalization = normalize_deck(lines)
+  simhash32 = simhash(normalization)
 
-  distance = jaccard_distance(a, b)
-
-  print(f"distance is {distance}")
-
-  # usage example
-  # job = create_job("job test #1")
-  # jobs = list_jobs()
+  job = create_or_edit_job(filename, normalization, simhash32)
+  print("#, end")

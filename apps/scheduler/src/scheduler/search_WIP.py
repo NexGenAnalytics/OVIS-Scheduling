@@ -1,6 +1,12 @@
 import sys
 
-from hashing.utils import jaccard_distance, normalize_deck, read_json, read_file
+from hashing.utils import normalize_deck, read_json, read_file
+
+def jaccard_distance(a: set, b: set) -> float:
+  if not a and not b:
+    return 0.0
+
+  return 1 - len(a & b) / len(a | b)
 
 def find_nearest(db, file):
   best = None
