@@ -18,6 +18,7 @@ source .venv/bin/activate # for Linux and Mac
 
 (.venv) pip install -r requirements.txt
 
+(.venv) database --list-jobs
 (.venv) hashing --input {path/to/file} --normalizer {method_name}
 # see examples below
 # see tests below
