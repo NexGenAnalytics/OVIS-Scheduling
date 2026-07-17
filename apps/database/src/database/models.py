@@ -9,6 +9,7 @@ class Job(Base):
 
   id: Mapped[int] = mapped_column(Integer, primary_key=True)
   filename: Mapped[str] = mapped_column(String(255), nullable=False)
+  method: Mapped[str] = mapped_column(String(255), nullable=False)
 
   normalization: Mapped[set[str]] = mapped_column(
     MutableSet.as_mutable(PickleType),
@@ -23,5 +24,5 @@ class Job(Base):
 
   def __repr__(self) -> str:
     return (
-      f"Job(id={self.id!r}, filename={self.filename!r}, simhash32={self.simhash32!r})"
+      f"Job(id={self.id!r}, filename={self.filename!r}, method={self.method!r},\n normalization={self.normalization!r}, simhash32={self.simhash32!r})"
     )
