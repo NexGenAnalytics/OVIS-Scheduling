@@ -32,6 +32,7 @@ source .venv/bin/activate # for Linux and Mac
 
 ```bash
 (.venv) hashing --input data/input-decks/TrilinosDebug/config.txt --normalizer cmake_cache_variables
+(.venv) hashing --input data/input-decks/LammpsObstacle/in.obstacle --normalizer lammps_in_files
 (.venv) hashing --input data/input-decks/LammpsTracker/in.tracker --normalizer lammps_in_files
 ```
 
