@@ -1,4 +1,4 @@
-def normalize_lammps(lines: list[str]) -> set:
+def normalize_lammps(lines: list[str]) -> set[str]:
   """
   Method:
   - Normalize LAMMPS lines into {'command=value', ...}.
@@ -8,21 +8,37 @@ def normalize_lammps(lines: list[str]) -> set:
   - Output: {"dimension=5", "radius=1 2 3"}
   """
   tokens = set()
+  continuation = ""
 
   for line in lines:
+
     # clean whitespace
-    line = line.strip().rstrip("\\").strip()
+    line = line.strip()
 
     # avoid empty and comment lines
     if not line or line.startswith("#"):
       continue
 
+    if continuation:
+      line = f"{continuation} {line}"
+
+    # save incomplete commands for the next line
+    if line.rstrip().endswith("&"):
+      continuation = line.rstrip()[:-1].strip()
+      continue
+
+    # reset
+    continuation = ""
+
     # split command and value
     parts = line.split(maxsplit=1)
-    command = parts[0]
-    value = parts[1]
+
+    # ignore lines that do not contrain both a command and a value
+    if len(parts) != 2:
+      continue
 
     # build token
-    tokens.add(f"{command.strip()}={value.strip()}")
+    command, value = parts
+    tokens.add(f"{command}={value}")
 
   return tokens
