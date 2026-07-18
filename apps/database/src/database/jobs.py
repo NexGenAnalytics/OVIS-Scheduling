@@ -37,3 +37,20 @@ def list_jobs() -> List[Job]:
       .order_by(Job.id)
     )
     return list(session.scalars(statement))
+
+def get_by_method(method: str) -> List[Job]:
+  with open_session() as session:
+    statement = (
+      select(Job)
+      .where(Job.method == method)
+      .order_by(Job.id)
+    )
+    return list(session.scalars(statement))
+
+def get_by_id(job_id: int) -> Job | None:
+  with open_session() as session:
+    statement = (
+      select(Job)
+      .where(Job.id == job_id)
+    )
+    return session.scalar(statement)

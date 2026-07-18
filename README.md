@@ -18,11 +18,25 @@ source .venv/bin/activate # for Linux and Mac
 
 (.venv) pip install -r requirements.txt
 
-(.venv) hashing --input [path]
-(.venv) modeling --input data/input/KokkosCuda/config.txt --output data/intermediate/modeling.json
+(.venv) database --list-jobs
+(.venv) database --list-by-method {method_name}
+(.venv) database --get-id {id}
+(.venv) database --get-hash-distance-between {id_A} {id_B}
+
+(.venv) hashing --input {path/to/file} --normalizer {method_name}
+# see examples below
+# see tests below
+
+(.venv) modeling
 (.venv) scheduler
 
 (.venv) deactivate
+```
+
+# Examples
+
+```bash
+(.venv) database --list-by-method lammps_in_files
 ```
 
 ## Infos
