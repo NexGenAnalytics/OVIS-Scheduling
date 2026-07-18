@@ -8,12 +8,13 @@ def normalize_lammps(lines: list[str]) -> set[str]:
   - Output: {"dimension=5", "radius=1 2 3"}
   """
   tokens = set()
+
+  # combines command attributes from different lines
   continuation = ""
 
   for line in lines:
-
-    # clean whitespace
-    line = line.strip()
+    # remove inline comments, then clean whitespace
+    line = line.split("#", maxsplit=1)[0].strip()
 
     # avoid empty and comment lines
     if not line or line.startswith("#"):

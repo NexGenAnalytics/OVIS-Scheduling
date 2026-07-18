@@ -27,3 +27,15 @@ class TestNormalizersLammps(unittest.TestCase):
     normalization = normalize_lammps(lines)
     gold = {"size=4 5 6 7 8 9", "dimension=20.5"}
     self.assertEqual(normalization, gold)
+
+  def test_lammps_in_files_5(self) -> None:
+    lines = ["# title", "size 4 5 6 &", "  7 8 9 &", "  10 11"]
+    normalization = normalize_lammps(lines)
+    gold = {"size=4 5 6 7 8 9 10 11"}
+    self.assertEqual(normalization, gold)
+
+  def test_lammps_in_files_6(self) -> None:
+    lines = ["# title", "run 1000 #0", "mass 4.3"]
+    normalization = normalize_lammps(lines)
+    gold = {"run=1000", "mass=4.3"}
+    self.assertEqual(normalization, gold)
