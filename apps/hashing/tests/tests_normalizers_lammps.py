@@ -39,3 +39,10 @@ class TestNormalizersLammps(unittest.TestCase):
     normalization = normalize_lammps(lines)
     gold = {"run=1000", "mass=4.3"}
     self.assertEqual(normalization, gold)
+
+  def test_lammps_in_files_7(self) -> None:
+    lines = ["# title", "clear", "mass 4 # ~4.321", "tensor #matrix"]
+    normalization = normalize_lammps(lines)
+    gold = {"clear", "mass=4", "tensor"}
+    self.assertEqual(normalization, gold)
+

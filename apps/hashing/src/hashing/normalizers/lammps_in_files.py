@@ -16,8 +16,8 @@ def normalize_lammps(lines: list[str]) -> set[str]:
     # remove inline comments, then clean whitespace
     line = line.split("#", maxsplit=1)[0].strip()
 
-    # avoid empty and comment lines
-    if not line or line.startswith("#"):
+    # avoid empty
+    if not line:
       continue
 
     if continuation:
@@ -31,15 +31,19 @@ def normalize_lammps(lines: list[str]) -> set[str]:
     # reset
     continuation = ""
 
-    # split command and value
+    # split line
     parts = line.split(maxsplit=1)
 
-    # ignore lines that do not contrain both a command and a value
-    if len(parts) != 2:
-      continue
+    # standalone command (such as "clear")
+    command = parts[0]
+    token = f"{command}"
+
+    # if there is a value
+    if len(parts) == 2:
+      value = parts[1]
+      token = f"{command}={value}"
 
     # build token
-    command, value = parts
-    tokens.add(f"{command}={value}")
+    tokens.add(token)
 
   return tokens
