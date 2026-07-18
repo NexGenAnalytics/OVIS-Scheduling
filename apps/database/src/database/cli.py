@@ -1,14 +1,8 @@
 import argparse
+import sys
 
+from database.utils import print_jobs, hamming_distance
 from database.jobs import list_jobs, get_by_method, get_by_id
-from database.models import Job
-
-def print_jobs(jobs: list[Job]) -> None:
-  if not jobs:
-    print("No jobs found.")
-    return
-
-  print(*jobs, sep="\n")
 
 def main() -> None:
   print("D, start")
@@ -36,6 +30,13 @@ def main() -> None:
     help="Get a job by its ID.",
   )
 
+  commands.add_argument(
+    "--get-hash-distance-between",
+    nargs=2,
+    type=int,
+    metavar=("ID_A", "ID_B"),
+  )
+
   args = parser.parse_args()
 
   match vars(args):
@@ -48,5 +49,15 @@ def main() -> None:
     case {"get_id": int(job_id)}:
       job = get_by_id(job_id)
       print(job if job is not None else "Job not found.")
+
+    case {"get_hash_distance_between": [int(id_a), int(id_b)]}:
+      job_a = get_by_id(id_a)
+      job_b = get_by_id(id_b)
+      if job_a is None or job_b is None:
+        print("Job(s) not found.")
+      else:
+        distance = hamming_distance(job_a.simhash32, job_b.simhash32)
+        print(f"Hamming distance is {distance}.")
+        print("Note: Hamming distance gives results between 0 (same) and 16 (very different).")
 
   print("D, end")
