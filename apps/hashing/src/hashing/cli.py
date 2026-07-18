@@ -1,7 +1,7 @@
 import argparse
 
 from hashing.utils import read_file, simhash
-from database.jobs import create_or_edit_job, list_jobs
+from database.jobs import create_or_edit_job
 from hashing.normalizers import NORMALIZERS
 
 def main() -> None:

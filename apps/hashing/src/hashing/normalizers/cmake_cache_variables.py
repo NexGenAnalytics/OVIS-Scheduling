@@ -1,4 +1,4 @@
-def normalize_cmake(lines: list[str]) -> set:
+def normalize_cmake(lines: list[str]) -> set[str]:
   """
   Method:
   - From a list of strings, extract "-D", clean, strip and stack them.
