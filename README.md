@@ -19,10 +19,15 @@ source .venv/bin/activate # for Linux and Mac
 (.venv) pip install -r requirements.txt
 
 (.venv) database --list-jobs
+(.venv) database --list-by-method {method_name}
+(.venv) database --get-id {id}
+(.venv) database --get-hash-distance-between {id_A} {id_B}
+
 (.venv) hashing --input {path/to/file} --normalizer {method_name}
 # see examples below
 # see tests below
-(.venv) modeling --input "arg_A" --output "arg_B"
+
+(.venv) modeling
 (.venv) scheduler
 
 (.venv) deactivate
@@ -31,6 +36,8 @@ source .venv/bin/activate # for Linux and Mac
 # Examples
 
 ```bash
+(.venv) database --list-by-method lammps_in_files
+
 (.venv) hashing --input data/input-decks/TrilinosDebug/config.txt --normalizer cmake_cache_variables
 (.venv) hashing --input data/input-decks/LammpsObstacle/in.obstacle --normalizer lammps_in_files
 (.venv) hashing --input data/input-decks/LammpsTracker/in.tracker --normalizer lammps_in_files
