@@ -18,21 +18,35 @@ source .venv/bin/activate # for Linux and Mac
 
 (.venv) pip install -r requirements.txt
 
-(.venv) hashing --input [path]
-(.venv) modeling --input data/input/KokkosCuda/config.txt --output data/intermediate/modeling.json
+(.venv) database --list-jobs
+(.venv) hashing --input {path/to/file} --normalizer {method_name}
+# see examples below
+# see tests below
+(.venv) modeling --input "arg_A" --output "arg_B"
 (.venv) scheduler
 
 (.venv) deactivate
+```
+
+# Examples
+
+```bash
+(.venv) hashing --input data/input-decks/TrilinosDebug/config.txt --normalizer cmake_cache_variables
+(.venv) hashing --input data/input-decks/LammpsObstacle/in.obstacle --normalizer lammps_in_files
+(.venv) hashing --input data/input-decks/LammpsTracker/in.tracker --normalizer lammps_in_files
+```
+
+# Tests
+
+```bash
+(.venv) python -m unittest discover apps/hashing/tests
 ```
 
 ## Infos
 
 - Entry point for an app is `apps/[name]/src/[name]/cli.py`.
 
-- Each folders in `data/input/` have at least 2 files:
-  + `config.txt` (`cmake` config command ), and
-  + `exec.txt` (effective running command).
-
 ## Devs notes
 
-- In `apps/scheduler`, there are some TODO scripts, to update with new archi.
+- In `apps/modeling`, there are some WIP scripts.
+- In `apps/scheduler`, there are some WIP and TODO scripts, to update with new archi.

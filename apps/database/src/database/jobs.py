@@ -6,16 +6,21 @@ from sqlalchemy import select
 
 def create_or_edit_job(
   filename: str,
+  method: str,
   normalization: set[str],
   simhash32: int,
 ) -> Job:
   with open_session() as session:
-    statement = select(Job).where(Job.filename == filename)
+    statement = select(Job).where(
+      Job.filename == filename,
+      Job.method == method,
+    )
     job = session.scalar(statement)
 
     if job is None:
       job = Job(
         filename=filename,
+        method=method,
         normalization=normalization,
         simhash32=simhash32,
       )
