@@ -2,6 +2,7 @@ from typing import List
 
 from database.models import Job
 from database.setup import open_session
+from database.utils import hamming_distance
 from sqlalchemy import select
 
 def create_or_edit_job(
@@ -59,3 +60,16 @@ def get_by_id(job_id: int) -> Job | None:
       .where(Job.id == job_id)
     )
     return session.scalar(statement)
+
+def get_by_distance(simhash32: int) -> Job | None:
+  jobs = list_jobs()
+
+  if not jobs:
+    return None
+
+  closest_job = min(
+    jobs,
+    key=lambda job: hamming_distance(simhash32, job.simhash32)
+  )
+
+  return closest_job
