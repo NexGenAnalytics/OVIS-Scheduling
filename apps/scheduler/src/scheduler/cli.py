@@ -2,7 +2,6 @@ import argparse
 
 from database.jobs import get_by_distance
 from hashing.utils import create_hash
-from hashing.normalizers import get_normalizer
 
 def main() -> None:
   print("S, start")
@@ -21,8 +20,7 @@ def main() -> None:
 
   match vars(args):
     case {"find_nearest_to": [str(filename), str(method)]}:
-      normalizer = get_normalizer(method)
-      _, simhash32 = create_hash(filename, normalizer)
+      _, simhash32 = create_hash(filename, method)
       job = get_by_distance(simhash32)
       print(f"Nearest: {job}")
 

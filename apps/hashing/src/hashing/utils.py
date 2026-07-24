@@ -1,6 +1,8 @@
 import hashlib
 import sys
 
+from hashing.normalizers import get_normalizer
+
 def _read_file(path: str) -> list[str]:
   """
   Read text file, line by line.
@@ -32,8 +34,9 @@ def _simhash(tokens, bits=32) -> int:
 
   return fingerprint
 
-def create_hash(path: str, normalizer) -> tuple[set[str], int]:
+def create_hash(path: str, method) -> tuple[set[str], int]:
   lines = _read_file(path)
+  normalizer = get_normalizer(method)
   normalization = normalizer(lines)
   simhash32 = _simhash(normalization)
   return normalization, simhash32

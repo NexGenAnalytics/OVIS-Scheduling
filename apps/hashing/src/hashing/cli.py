@@ -15,8 +15,7 @@ def main() -> None:
   filename = args.input
   method = args.normalizer
 
-  normalizer = get_normalizer(method)
-  normalization, simhash32 = create_hash(filename, normalizer)
+  normalization, simhash32 = create_hash(filename, method)
 
   if args.save:
     job = create_or_edit_job(filename, method, normalization, simhash32)
