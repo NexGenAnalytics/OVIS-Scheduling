@@ -9,3 +9,6 @@ NORMALIZERS: dict[str, Normalizer] = {
   "cmake_cache_variables": normalize_cmake,
   "lammps_in_files": normalize_lammps,
 }
+
+def get_normalizer(name: str) -> Normalizer:
+  return NORMALIZERS[name]

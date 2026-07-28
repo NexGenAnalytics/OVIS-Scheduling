@@ -1,6 +1,6 @@
 import argparse
 
-from hashing.utils import read_file, simhash
+from hashing.utils import create_hash
 from database.jobs import create_or_edit_job
 from hashing.normalizers import NORMALIZERS
 
@@ -9,16 +9,15 @@ def main() -> None:
   parser = argparse.ArgumentParser()
   parser.add_argument("--input", required=True)
   parser.add_argument("--normalizer", required=True, choices=NORMALIZERS)
+  parser.add_argument("--save", action="store_true")
   args = parser.parse_args()
 
   filename = args.input
   method = args.normalizer
 
-  lines = read_file(filename)
-  normalizer = NORMALIZERS[method]
+  normalization, simhash32 = create_hash(filename, method)
 
-  normalization = normalizer(lines)
-  simhash32 = simhash(normalization)
+  if args.save:
+    job = create_or_edit_job(filename, method, normalization, simhash32)
 
-  job = create_or_edit_job(filename, method, normalization, simhash32)
   print("#, end")
