@@ -24,12 +24,13 @@ source .venv/bin/activate # for Linux and Mac
 (.venv) database --get-id {id}
 (.venv) database --get-hash-distance-between {id_A} {id_B}
 
-(.venv) hashing --input {path/to/file} --normalizer {method_name}
+(.venv) hashing --input {path/to/file} --normalizer {method_name} [--save]
 # see examples below
 # see tests below
 
 (.venv) modeling
-(.venv) scheduler
+
+(.venv) scheduler --find-nearest-to {path/to/file} {method_name}
 
 (.venv) deactivate
 ```
@@ -40,13 +41,19 @@ source .venv/bin/activate # for Linux and Mac
 (.venv) database --list-by-method lammps_in_files
 
 (.venv) hashing --input data/input-decks/TrilinosDebug/config.txt --normalizer cmake_cache_variables
-(.venv) hashing --input data/input-decks/LammpsObstacle/in.obstacle --normalizer lammps_in_files
+(.venv) hashing --input data/input-decks/LammpsObstacle/in.obstacle --normalizer lammps_in_files --save
 (.venv) hashing --input data/input-decks/LammpsTracker/in.tracker --normalizer lammps_in_files
+
+(.venv) scheduler --find-nearest-to data/input-decks/LammpsNemd/in.nemd lammps_in_files
 ```
 
 # Tests
 
+- `(.venv) python [command] -v` makes the tests verbose.
+
 ```bash
+(.venv) python -m unittest discover apps/database/tests
+
 (.venv) python -m unittest discover apps/hashing/tests
 ```
 
