@@ -4,6 +4,7 @@
 
 ## Apps
 
+- `common`, common tools across apps (`read_file`for example).
 - `database`, store predictions (from `modeling`) and hashs (from `hashing`).
 - `hashing`, [README](./apps/hashing/README.md).
 - `modeling`, create a prediction of CPU and memory usage.

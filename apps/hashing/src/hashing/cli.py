@@ -1,7 +1,8 @@
 import argparse
 
-from hashing.utils import read_file, simhash
+from common.utils import read_file
 from database.jobs import create_or_edit_job
+from hashing.utils import simhash
 from hashing.normalizers import NORMALIZERS
 
 def main() -> None:
