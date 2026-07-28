@@ -7,7 +7,7 @@
 - `common`, common tools across apps (`read_file` for example).
 - `database`, store predictions (from `modeling`) and hashs (from `hashing`).
 - `hashing`, [README](./apps/hashing/README.md).
-- `modeling`, create a prediction of CPU and memory usage.
+- `modeling`, neural network to create predictions of CPU and memory usage.
 - `scheduler`, (issue #9).
 
 ## How to use
@@ -25,10 +25,9 @@ source .venv/bin/activate # for Linux and Mac
 (.venv) database --get-hash-distance-between {id_A} {id_B}
 
 (.venv) hashing --input {path/to/file} --normalizer {method_name} [--save]
-# see examples below
-# see tests below
 
-(.venv) modeling
+(.venv) modeling --train
+(.venv) modeling --test {path/to/file}
 
 (.venv) scheduler --find-nearest-to {path/to/file} {method_name}
 
@@ -43,6 +42,9 @@ source .venv/bin/activate # for Linux and Mac
 (.venv) hashing --input data/input-decks/TrilinosDebug/config.txt --normalizer cmake_cache_variables
 (.venv) hashing --input data/input-decks/LammpsObstacle/in.obstacle --normalizer lammps_in_files --save
 (.venv) hashing --input data/input-decks/LammpsTracker/in.tracker --normalizer lammps_in_files
+
+(.venv) modeling --test data/input-decks/LammpsNemd/in.nemd
+# Note: does not save to the database
 
 (.venv) scheduler --find-nearest-to data/input-decks/LammpsNemd/in.nemd lammps_in_files
 ```
