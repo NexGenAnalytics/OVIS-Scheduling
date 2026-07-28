@@ -1,9 +1,15 @@
 from typing import List
+from sqlalchemy import select
+from sqlalchemy.orm import sessionmaker
 
 from database.models import Job
 from database.setup import open_session
 from database.utils import hamming_distance
-from sqlalchemy import select
+
+def insert_jobs(session_factory: sessionmaker, *jobs: Job) -> None:
+  with session_factory() as session:
+    session.add_all(jobs)
+    session.commit()
 
 def create_or_edit_job(
   filename: str,
