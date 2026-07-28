@@ -21,7 +21,7 @@ def main() -> None:
   match vars(args):
     case {"find_nearest_to": [str(filename), str(method)]}:
       _, simhash32 = create_hash(filename, method)
-      job = get_by_distance(simhash32)
+      job = get_by_distance(simhash32, method)
       print(f"Nearest: {job}")
 
   print("S, end")

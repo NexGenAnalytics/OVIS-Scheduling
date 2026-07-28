@@ -61,8 +61,8 @@ def get_by_id(job_id: int) -> Job | None:
     )
     return session.scalar(statement)
 
-def get_by_distance(simhash32: int) -> Job | None:
-  jobs = list_jobs()
+def get_by_distance(simhash32: int, method: str) -> Job | None:
+  jobs = get_by_method(method)
 
   if not jobs:
     return None
