@@ -1,8 +1,15 @@
 from typing import List
+from sqlalchemy import select
+from sqlalchemy.orm import sessionmaker
 
 from database.models import Job
 from database.setup import open_session
-from sqlalchemy import select
+from database.utils import hamming_distance
+
+def insert_jobs(session_factory: sessionmaker, *jobs: Job) -> None:
+  with session_factory() as session:
+    session.add_all(jobs)
+    session.commit()
 
 def create_or_edit_job(
   filename: str,
@@ -59,3 +66,16 @@ def get_by_id(job_id: int) -> Job | None:
       .where(Job.id == job_id)
     )
     return session.scalar(statement)
+
+def get_by_distance(simhash32: int, method: str) -> Job | None:
+  jobs = get_by_method(method)
+
+  if not jobs:
+    return None
+
+  closest_job = min(
+    jobs,
+    key=lambda job: hamming_distance(simhash32, job.simhash32)
+  )
+
+  return closest_job
