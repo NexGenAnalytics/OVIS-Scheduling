@@ -16,6 +16,7 @@ def main() -> None:
   method = args.normalizer
 
   normalization, simhash32 = create_hash(filename, method)
+  print(f"#, hash: {simhash32}")
 
   if args.save:
     job = create_or_edit_job(filename, method, normalization, simhash32)
