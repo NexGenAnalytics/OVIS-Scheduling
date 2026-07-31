@@ -1,5 +1,8 @@
 import hashlib
 
+from common.utils import read_file
+from hashing.normalizers import get_normalizer
+
 def _simhash(tokens, bits=32) -> int:
   """
   Create hash from a set[str].
@@ -20,7 +23,7 @@ def _simhash(tokens, bits=32) -> int:
   return fingerprint
 
 def create_hash(path: str, method) -> tuple[set[str], int]:
-  lines = _read_file(path)
+  lines = read_file(path)
   normalizer = get_normalizer(method)
   normalization = normalizer(lines)
   simhash32 = _simhash(normalization)

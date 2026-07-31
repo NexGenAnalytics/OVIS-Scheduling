@@ -1,8 +1,7 @@
 import argparse
 
-from common.utils import read_file
+from hashing.utils import create_hash
 from database.jobs import create_or_edit_job
-from hashing.utils import simhash
 from hashing.normalizers import NORMALIZERS
 
 def main() -> None:
@@ -17,6 +16,7 @@ def main() -> None:
   method = args.normalizer
 
   normalization, simhash32 = create_hash(filename, method)
+  print(f"#, hash: {simhash32}")
 
   if args.save:
     job = create_or_edit_job(filename, method, normalization, simhash32)
