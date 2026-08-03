@@ -10,12 +10,14 @@ def main() -> None:
   parser.add_argument("--input", required=True)
   parser.add_argument("--normalizer", required=True, choices=NORMALIZERS)
   parser.add_argument("--save", action="store_true")
+  parser.add_argument("--weights")
   args = parser.parse_args()
 
   filename = args.input
   method = args.normalizer
+  weights = args.weights
 
-  normalization, simhash32 = create_hash(filename, method)
+  normalization, simhash32 = create_hash(filename, method, weights)
   print(f"#, hash: {simhash32}")
 
   if args.save:

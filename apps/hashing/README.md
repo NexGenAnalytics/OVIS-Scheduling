@@ -5,7 +5,9 @@
 - Create a normalization from `--input` and `--normalizer`.
 - Create a hash from the normalization.
 - Save (`--save`) normalization and hash into database.
-- You can specify the weight (`--weight`) of the parameters you want to emphasize.
+- You can specify the parameters you want to emphasize with `--weights`. The
+weights file (`weights.txt`) contains one parameter name per line. Each listed parameter
+contributes twice as much as an unlisted parameter when creating the hash.
 
 ## Current normalizers
 
@@ -21,7 +23,7 @@
 (.venv) hashing --input {path/to/file} \
                 --normalizer {method_name} \
                 [--save] \
-                [--weight {path/to/file}]
+                [--weights {path/to/file}]
 ```
 
 ## Examples
@@ -43,7 +45,7 @@
 # use weight
 (.venv) hashing --input data/input-decks/LammpsPeptide/in.peptide \
                 --normalizer lammps_in_files \
-                --weight data/input-decks/LammpsPeptide/weight.txt
+                --weights data/input-decks/LammpsPeptide/weights.txt
 ```
 
 ## How do I add a new normalizer?
