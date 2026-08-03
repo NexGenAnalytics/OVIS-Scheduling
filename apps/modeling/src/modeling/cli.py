@@ -109,7 +109,7 @@ def main() -> None:
   match vars(args):
     case {"train": True}:
       # load data
-      trainingfolder = Path("apps/modeling/training")
+      trainingfolder = Path("apps/modeling/training_single")
       rows = load_training(trainingfolder)
       data = pd.DataFrame(rows)
       # print(data)
