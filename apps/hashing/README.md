@@ -4,7 +4,8 @@
 
 - Create a normalization from `--input` and `--normalizer`.
 - Create a hash from the normalization.
-- Save normalization and hash into database.
+- Save (`--save`) normalization and hash into database.
+- You can specify the weight (`--weight`) of the parameters you want to emphasize.
 
 ## Current normalizers
 
@@ -13,6 +14,37 @@
   + Based on `-D`.
 - `lammps_in_files` method:
   + Use `in.*` file.
+
+## How to use?
+
+```bash
+(.venv) hashing --input {path/to/file} \
+                --normalizer {method_name} \
+                [--save] \
+                [--weight {path/to/file}]
+```
+
+## Examples
+
+```bash
+# normalizer: cmake_cache_variables
+(.venv) hashing --input data/input-decks/TrilinosDebug/config.txt \
+                --normalizer cmake_cache_variables
+
+# normalizer: lammps_in_files
+(.venv) hashing --input data/input-decks/LammpsTracker/in.tracker \
+                --normalizer lammps_in_files
+
+# save result
+(.venv) hashing --input data/input-decks/LammpsObstacle/in.obstacle
+                --normalizer lammps_in_files \
+                --save
+
+# use weight
+(.venv) hashing --input data/input-decks/LammpsPeptide/in.peptide \
+                --normalizer lammps_in_files \
+                --weight data/input-decks/LammpsPeptide/weight.txt
+```
 
 ## How do I add a new normalizer?
 

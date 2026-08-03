@@ -24,9 +24,7 @@ source .venv/bin/activate # for Linux and Mac
 (.venv) database --get-id {id}
 (.venv) database --get-hash-distance-between {id_A} {id_B}
 
-(.venv) hashing --input {path/to/file} --normalizer {method_name} [--save]
-# see examples below
-# see tests below
+# `hashing`: see in README
 
 (.venv) modeling
 
@@ -40,9 +38,7 @@ source .venv/bin/activate # for Linux and Mac
 ```bash
 (.venv) database --list-by-method lammps_in_files
 
-(.venv) hashing --input data/input-decks/TrilinosDebug/config.txt --normalizer cmake_cache_variables
-(.venv) hashing --input data/input-decks/LammpsObstacle/in.obstacle --normalizer lammps_in_files --save
-(.venv) hashing --input data/input-decks/LammpsTracker/in.tracker --normalizer lammps_in_files
+# `hashing`: see in README
 
 (.venv) scheduler --find-nearest-to data/input-decks/LammpsNemd/in.nemd lammps_in_files
 ```
