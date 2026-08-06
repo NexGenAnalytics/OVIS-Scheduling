@@ -4,6 +4,12 @@ import pandas as pd
 
 from pathlib import Path
 
+from sklearn.compose import TransformedTargetRegressor
+from sklearn.feature_extraction.text import TfidfVectorizer
+from sklearn.neural_network import MLPRegressor
+from sklearn.pipeline import make_pipeline
+from sklearn.preprocessing import StandardScaler
+
 from common.utils import read_file
 
 def filter_data(foldername: str, verbose = True):
@@ -35,7 +41,7 @@ def filter_data(foldername: str, verbose = True):
 
   return folders
 
-def create_features(folders: list, verbose = True):
+def create_features(folders: list):
   """
   Given correct folders, extract data and return a features list
   """
@@ -63,11 +69,43 @@ def create_features(folders: list, verbose = True):
   return features
 
 def train_model(data):
-  print("train TODO TODO TODO TODO TODO TODO TODO TODO TODO")
+  """
+  Train a small MLP to predict the CPU and memory time series.
+  """
+  if data.empty:
+    raise ValueError("No complete training profiles were found")
 
-  # TODO
+  target_lengths = {
+    (len(row.CPU), len(row.MEMORY))
+    for row in data.itertuples()
+  }
+  if len(target_lengths) != 1:
+    raise ValueError("All CPU and memory series must have the same length")
 
-  return []
+  cpu_length, memory_length = target_lengths.pop()
+  if cpu_length == 0 or cpu_length != memory_length:
+    raise ValueError("CPU and memory series must be non-empty and equally sized")
+
+  decks = data["DECK"].map("\n".join)
+  targets = [
+    cpu + memory
+    for cpu, memory in zip(data["CPU"], data["MEMORY"])
+  ]
+
+  model = TransformedTargetRegressor(
+    regressor=make_pipeline(
+      TfidfVectorizer(),
+      MLPRegressor(
+        hidden_layer_sizes=(8,),
+        solver="lbfgs",
+        max_iter=1000,
+        random_state=42,
+      ),
+    ),
+    transformer=StandardScaler(),
+  )
+  model.fit(decks, targets)
+  return model
 
 def main() -> None:
   print("M, start")
@@ -86,7 +124,7 @@ def main() -> None:
       folders = filter_data(path, verbose = False)
       print("M, folders filtered")
 
-      features = create_features(folders, verbose = True)
+      features = create_features(folders)
       data = pd.DataFrame(features)
       print("M, data extracted")
 
@@ -98,14 +136,18 @@ def main() -> None:
       print("M, model saved")
 
     case {"test": str(path)}:
-      features = [] # TODO TODO TODO TODO TODO TODO TODO TODO
-      data = pd.DataFrame(features)
-      print("M, data loaded")
-
       model = joblib.load(MODEL_PATH)
       print("M, model loaded")
 
-      prediction = model.predict(data)
-      print(f"M, prediction => {prediction}")
+      deck = "\n".join(read_file(path, str))
+      print("M, deck loaded")
+
+      prediction = model.predict([deck])[0]
+      print("M, prediction made")
+
+      midpoint = len(prediction) // 2
+      cpu = [max(0.0, round(float(value), 2)) for value in prediction[:midpoint]]
+      memory = [max(0.0, round(float(value), 2)) for value in prediction[midpoint:]]
+      print(f"M, prediction => cpu: {cpu} / memory: {memory}")
 
   print("M, end")

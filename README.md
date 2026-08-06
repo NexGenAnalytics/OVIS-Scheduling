@@ -26,8 +26,7 @@ source .venv/bin/activate # for Linux and Mac
 
 (.venv) hashing --input {path/to/file} --normalizer {method_name} [--save]
 
-(.venv) modeling --train {path/to/training/folder}
-(.venv) modeling --test {path/to/file}
+# `modeling`: see in README
 
 (.venv) scheduler --find-nearest-to {path/to/file} {method_name}
 
@@ -43,8 +42,7 @@ source .venv/bin/activate # for Linux and Mac
 (.venv) hashing --input data/input-decks/LammpsObstacle/in.obstacle --normalizer lammps_in_files --save
 (.venv) hashing --input data/input-decks/LammpsTracker/in.tracker --normalizer lammps_in_files
 
-(.venv) modeling --train data/profiles/
-(.venv) modeling --test data/input-decks/LammpsNemd/in.nemd
+# `modeling`: see in README
 
 (.venv) scheduler --find-nearest-to data/input-decks/LammpsNemd/in.nemd lammps_in_files
 ```
@@ -54,10 +52,10 @@ source .venv/bin/activate # for Linux and Mac
 - `(.venv) python [command] -v` makes the tests verbose.
 
 ```bash
-(.venv) python -m unittest discover apps/commun/tests
+(.venv) python -m unittest discover apps/common/tests
 (.venv) python -m unittest discover apps/database/tests
-
 (.venv) python -m unittest discover apps/hashing/tests
+(.venv) python -m unittest discover apps/modeling/tests
 ```
 
 ## Infos

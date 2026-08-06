@@ -9,7 +9,7 @@ on:
       - main
 
 jobs:
-  hashing-tests:
+  unit-tests:
     runs-on: ubuntu-latest
 
     steps:
@@ -21,4 +21,14 @@ jobs:
 
       - run: python -m pip install -r requirements.txt
 
-      - run: python -m unittest discover apps/hashing/tests
+      - name: Run common tests
+        run: python -m unittest discover apps/common/tests
+
+      - name: Run database tests
+        run: python -m unittest discover apps/database/tests
+
+      - name: Run hashing tests
+        run: python -m unittest discover apps/hashing/tests
+
+      - name: Run modeling tests
+        run: python -m unittest discover apps/modeling/tests
