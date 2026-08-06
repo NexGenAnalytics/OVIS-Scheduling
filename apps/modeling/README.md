@@ -1,5 +1,12 @@
 # modeling
 
+## Description
+
+- Valid training profile should contains `deck.txt`, `cpu.txt`, and `memory.txt`.
+- Each CPU/memory line represents one minute.
+- CPU and memory must have the same number of lines within one profile.
+- Different profiles may have different durations.
+
 ## How to use
 
 ```bash

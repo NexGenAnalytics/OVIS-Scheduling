@@ -12,6 +12,9 @@ from sklearn.preprocessing import StandardScaler
 
 from common.utils import read_file
 
+OUTPUT_FOLDER = Path("data/output/")
+MODEL_PATH = OUTPUT_FOLDER / "model.joblib"
+
 def filter_data(foldername: str, verbose = True):
   """
   Given a path to a folder, return each first level folders where
@@ -68,33 +71,43 @@ def create_features(folders: list):
 
   return features
 
-def train_model(data):
+def create_targets(data):
   """
-  Train a small MLP to predict the CPU and memory time series.
+  Create padded targets: duration, CPU values, then memory values.
   """
   if data.empty:
     raise ValueError("No complete training profiles were found")
 
-  target_lengths = {
-    (len(row.CPU), len(row.MEMORY))
-    for row in data.itertuples()
-  }
-  if len(target_lengths) != 1:
-    raise ValueError("All CPU and memory series must have the same length")
+  for row in data.itertuples():
+    if not row.CPU or len(row.CPU) != len(row.MEMORY):
+      raise ValueError(
+        "CPU and memory series in each profile must be non-empty and equally sized"
+      )
 
-  cpu_length, memory_length = target_lengths.pop()
-  if cpu_length == 0 or cpu_length != memory_length:
-    raise ValueError("CPU and memory series must be non-empty and equally sized")
+  maximum_length = max(len(cpu) for cpu in data["CPU"])
+  targets = []
+
+  for cpu, memory in zip(data["CPU"], data["MEMORY"]):
+    duration = len(cpu)
+    cpu_padding = [0] * (maximum_length - duration)
+    memory_padding = [0] * (maximum_length - duration)
+    targets.append(
+      [duration] + cpu + cpu_padding + memory + memory_padding
+    )
+
+  return targets
+
+def train_model(data):
+  """
+  Train one small MLP to predict duration, CPU, and memory.
+  """
+  targets = create_targets(data)
 
   decks = data["DECK"].map("\n".join)
-  targets = [
-    cpu + memory
-    for cpu, memory in zip(data["CPU"], data["MEMORY"])
-  ]
 
   model = TransformedTargetRegressor(
     regressor=make_pipeline(
-      TfidfVectorizer(),
+      TfidfVectorizer(token_pattern=r"(?u)\b\w+\b"),
       MLPRegressor(
         hidden_layer_sizes=(8,),
         solver="lbfgs",
@@ -107,6 +120,32 @@ def train_model(data):
   model.fit(decks, targets)
   return model
 
+def predict_model(model, deck):
+  """
+  Predict and remove the padded values.
+  """
+  prediction = model.predict([deck])[0]
+  maximum_length = (len(prediction) - 1) // 2
+  duration = max(1, min(maximum_length, round(float(prediction[0]))))
+
+  cpu_start = 1
+  memory_start = cpu_start + maximum_length
+  cpu = prediction[cpu_start:memory_start][:duration]
+  memory = prediction[memory_start:][:duration]
+
+  return duration, cpu, memory
+
+def display_prediction(duration, cpu, memory):
+  """
+  Display one CPU/memory prediction per minute.
+  """
+  print(f"M, predicted duration => {duration} minutes")
+
+  for time, (cpu_value, memory_value) in enumerate(zip(cpu, memory)):
+    cpu_value = max(0.0, round(float(cpu_value), 2))
+    memory_value = max(0.0, round(float(memory_value), 2))
+    print(f"time: {time}, cpu: {cpu_value}%, memory: {memory_value}%")
+
 def main() -> None:
   print("M, start")
 
@@ -115,8 +154,6 @@ def main() -> None:
   commands.add_argument("--train", metavar="PATH")
   commands.add_argument("--test", metavar="PATH")
   args = parser.parse_args()
-
-  MODEL_PATH = Path("data/output/model.joblib")
 
   match vars(args):
 
@@ -142,12 +179,9 @@ def main() -> None:
       deck = "\n".join(read_file(path, str))
       print("M, deck loaded")
 
-      prediction = model.predict([deck])[0]
+      duration, cpu, memory = predict_model(model, deck)
       print("M, prediction made")
 
-      midpoint = len(prediction) // 2
-      cpu = [max(0.0, round(float(value), 2)) for value in prediction[:midpoint]]
-      memory = [max(0.0, round(float(value), 2)) for value in prediction[midpoint:]]
-      print(f"M, prediction => cpu: {cpu} / memory: {memory}")
+      display_prediction(duration, cpu, memory)
 
   print("M, end")

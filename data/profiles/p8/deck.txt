@@ -1,0 +1,9 @@
+# Example LAMMPS job
+units           real
+atom_style      full
+dimension       2
+neighbor        0.3 bin
+pair_style      lj/cut 1.12246
+pair_coeff      * * 1.0 1.0 1.12246
+timestep        0.003
+run             25000
