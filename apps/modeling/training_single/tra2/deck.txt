@@ -1,2 +1,0 @@
-dimension 3
-atom_style atomic

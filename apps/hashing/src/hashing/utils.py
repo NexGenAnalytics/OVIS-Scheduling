@@ -23,7 +23,7 @@ def _simhash(tokens, bits=32) -> int:
   return fingerprint
 
 def create_hash(path: str, method) -> tuple[set[str], int]:
-  lines = read_file(path)
+  lines = read_file(path, str)
   normalizer = get_normalizer(method)
   normalization = normalizer(lines)
   simhash32 = _simhash(normalization)
