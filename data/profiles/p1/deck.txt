@@ -1,5 +1,0 @@
-dimension       3
-atom_style      atomic
-
-pair_style      lj/cut 4.0
-pair_coeff      * * 1.0 1.0
