@@ -2,6 +2,22 @@
 
 `NexGen Analytics` work for Sandia `Open-source Varnish Information System`.
 
+Goal:
+
+* The ability to (A) evaluate simulations in order to (B) predict and, thereby,
+(C) optimize the use of clusters.
+
+Proposed solution:
+
+* (A) Retrieving simulation initial parameters (input decks) along with their run
+profiles (CPU and memory usage). They are identified by a hash.
+
+* (B) Training a neural network based on simulations input decks and retrieved
+run profiles (data).
+
+* (C) Scheduling the simulations to be run, given the input decks and the current
+status of the clusters: using the nearest hash, or using the neural network.
+
 ## Apps
 
 - `common`, common tools across apps (`read_file` for example).
