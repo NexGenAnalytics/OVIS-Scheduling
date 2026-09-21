@@ -4,7 +4,7 @@
 
 import argparse
 import traceback
-from collections.abc import Callable, Iterable
+from typing import Callable, Dict, Iterable, List, Optional, Tuple
 from dataclasses import dataclass
 from functools import partial
 from pathlib import Path
@@ -14,8 +14,7 @@ import yaml
 from sosdb import Sos
 
 BASE_DIR = Path(__file__).resolve().parents[1]
-RUNS_DIR = BASE_DIR / "runs"
-DATA_DIR = BASE_DIR / "data" / "ldms"
+LDMS_DATA_DIR = BASE_DIR / "data" / "ldms"
 
 SOS_CONFIG = "/opt/ovis/dsos/config/manzano.conf"
 SOS_DATABASE = "/storage/manzano/sos/database"
@@ -39,7 +38,7 @@ QueryFn = Callable[[str], pd.DataFrame]
 @dataclass(frozen=True)
 class MetricSpec:
     schema: str
-    columns: tuple[str, ...]
+    columns: Tuple[str, ...]
     derive: Deriver
     unit: str
 
@@ -58,7 +57,7 @@ def rate(*columns: str, scale: float = 1.0) -> Deriver:
 
 
 # Add a metric by adding a row here; nothing downstream needs to change.
-METRICS: dict[str, MetricSpec] = {
+METRICS: Dict[str, MetricSpec] = {
     "mem_active_kb": MetricSpec(MEM_SCHEMA, ("Active",), gauge("Active"), "kB"),
     # procstat counts USER_HZ jiffies, so a scale of 100 gives cores in use.
     "cpu_cores_used": MetricSpec(CPU_SCHEMA, ("user", "sys"), rate("user", "sys", scale=100.0), "cores"),
@@ -75,7 +74,7 @@ def resolve(name: str) -> str:
     return canonical
 
 
-def load_manifest(path: Path) -> tuple[list[str], dict[int, dict]]:
+def load_manifest(path: Path) -> Tuple[List[str], Dict[int, dict]]:
     """Validated manifest as (canonical metric names, {job_id: job config})."""
     cfg = yaml.safe_load(Path(path).read_text()) or {}
     metrics = cfg.get("metrics") or []
@@ -104,8 +103,11 @@ def run_query(cont, sql: str) -> pd.DataFrame:
     query.select(sql)
 
     chunks = []
-    while (chunk := query.next()) is not None:
+
+    chunk = query.next()
+    while chunk is not None:
         chunks.append(chunk.copy(deep=True))
+        chunk = query.next()
 
     return pd.concat(chunks, ignore_index=True) if chunks else pd.DataFrame()
 
@@ -175,13 +177,13 @@ def summarize(job_id: int, job_cfg: dict, tidy: pd.DataFrame, out_csv, status: s
     }
 
 
-def process_job(query: QueryFn, runs_dir: Path, job_id: int, job_cfg: dict, metrics: list[str]) -> dict:
+def process_job(query: QueryFn, job_id: int, job_cfg: dict, metrics: List[str]) -> dict:
     tidy = collect_job(query, job_id, metrics)
 
     if tidy.empty:
         return summarize(job_id, job_cfg, tidy, "", "no_data")
 
-    out_csv = runs_dir / job_cfg["build"] / job_cfg["problem"] / str(job_id) / "ldms_metrics.csv"
+    out_csv = LDMS_DATA_DIR / job_cfg["build"] / job_cfg["problem"] / str(job_id) / "ldms_metrics.csv"
     out_csv.parent.mkdir(parents=True, exist_ok=True)
     tidy.to_csv(out_csv, index=False)
     print(f"Wrote {out_csv} ({len(tidy)} rows)")
@@ -189,19 +191,18 @@ def process_job(query: QueryFn, runs_dir: Path, job_id: int, job_cfg: dict, metr
     return summarize(job_id, job_cfg, tidy, out_csv, "ok")
 
 
-def parse_args(argv: list[str] | None = None) -> argparse.Namespace:
+def parse_args(argv: Optional[List[str]] = None) -> argparse.Namespace:
     parser = argparse.ArgumentParser(
         description="Write one un-aggregated CSV of LDMS metrics per job in a manifest.",
     )
     parser.add_argument("manifest", type=Path, help="YAML manifest listing metrics and jobs.")
-    parser.add_argument("--runs-dir", type=Path, default=RUNS_DIR)
-    parser.add_argument("--data-dir", type=Path, default=DATA_DIR)
+    parser.add_argument("--data-dir", type=Path, default=LDMS_DATA_DIR)
     parser.add_argument("--sos-config", default=SOS_CONFIG)
     parser.add_argument("--sos-database", default=SOS_DATABASE)
     return parser.parse_args(argv)
 
 
-def main(argv: list[str] | None = None) -> None:
+def main(argv: Optional[List[str]] = None) -> None:
     args = parse_args(argv)
     metrics, jobs = load_manifest(args.manifest)
 
@@ -212,7 +213,7 @@ def main(argv: list[str] | None = None) -> None:
     for job_id, job_cfg in jobs.items():
         print(f"\n=== job {job_id} ===")
         try:
-            summaries.append(process_job(query, args.runs_dir, job_id, job_cfg, metrics))
+            summaries.append(process_job(query, job_id, job_cfg, metrics))
         except Exception as error:
             print(f"ERROR processing job {job_id}: {error}")
             traceback.print_exc()
