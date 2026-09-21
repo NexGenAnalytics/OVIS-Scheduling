@@ -1,307 +1,230 @@
 #!/usr/bin/env python3
 
-import os
+"""Fetch per-job LDMS metric time series from DSOS, one un-aggregated CSV per job."""
+
 import argparse
 import traceback
+from collections.abc import Callable, Iterable
+from dataclasses import dataclass
+from functools import partial
 from pathlib import Path
 
-import yaml
 import pandas as pd
+import yaml
 from sosdb import Sos
 
-# -----------------------------
-# Global configuration
-# -----------------------------
+BASE_DIR = Path(__file__).resolve().parents[1]
+RUNS_DIR = BASE_DIR / "runs"
+DATA_DIR = BASE_DIR / "data" / "ldms"
 
-BASE_DIR = Path(__file__).resolve().parent
-DATA_DIR = os.path.join(BASE_DIR, "data", "ldms")
-
+SOS_CONFIG = "/opt/ovis/dsos/config/manzano.conf"
 SOS_DATABASE = "/storage/manzano/sos/database"
-SOS_CONFIG   = "/opt/ovis/dsos/config/manzano.conf"
 
 MEM_SCHEMA = "meminfo_toss4"
 CPU_SCHEMA = "procstat_96"
 
-MERGE_TOLERANCE_SECONDS = 5.0
+CHUNK_ROWS = 1024 * 1024
 
-# -----------------------------
-# Helpers
-# -----------------------------
+SAMPLE_COLUMNS = ["timestamp", "job_id", "component_id", "metric", "unit", "value"]
+TIDY_COLUMNS = ["timestamp", "time_rel_s", *SAMPLE_COLUMNS[1:]]
+SUMMARY_COLUMNS = ["job_id", "build", "problem", "components", "rows", "out_csv", "status"]
 
-def load_yaml(path):
-    with open(path, "r") as f:
-        return yaml.safe_load(f)
+# Turns one component's time-ordered samples into the metric's value column.
+Deriver = Callable[[pd.DataFrame], pd.Series]
+
+# Runs one DSOS SQL statement and returns every matching row.
+QueryFn = Callable[[str], pd.DataFrame]
 
 
-def fetch_query(cont, sql):
-    query = cont.query(1024 * 1024)
+@dataclass(frozen=True)
+class MetricSpec:
+    schema: str
+    columns: tuple[str, ...]
+    derive: Deriver
+    unit: str
+
+
+def gauge(column: str) -> Deriver:
+    """Read a column that already holds the value, such as memory in use."""
+    return lambda df: df[column].astype(float)
+
+
+def rate(*columns: str, scale: float = 1.0) -> Deriver:
+    """Differentiate monotonic counters, such as CPU jiffies, into a per-second rate."""
+    def derive(df: pd.DataFrame) -> pd.Series:
+        total = sum(df[column].astype(float) for column in columns)
+        return total.diff() / df["timestamp"].diff() / scale
+    return derive
+
+
+# Add a metric by adding a row here; nothing downstream needs to change.
+METRICS: dict[str, MetricSpec] = {
+    "mem_active_kb": MetricSpec(MEM_SCHEMA, ("Active",), gauge("Active"), "kB"),
+    # procstat counts USER_HZ jiffies, so a scale of 100 gives cores in use.
+    "cpu_cores_used": MetricSpec(CPU_SCHEMA, ("user", "sys"), rate("user", "sys", scale=100.0), "cores"),
+}
+
+# Metric names used by older manifests.
+ALIASES = {"Active": "mem_active_kb", "CPU": "cpu_cores_used"}
+
+
+def resolve(name: str) -> str:
+    canonical = ALIASES.get(name, name)
+    if canonical not in METRICS:
+        raise KeyError(f"unknown metric '{name}'; known metrics: {', '.join(sorted(METRICS))}")
+    return canonical
+
+
+def load_manifest(path: Path) -> tuple[list[str], dict[int, dict]]:
+    """Validated manifest as (canonical metric names, {job_id: job config})."""
+    cfg = yaml.safe_load(Path(path).read_text()) or {}
+    metrics = cfg.get("metrics") or []
+    jobs = cfg.get("jobs") or {}
+
+    if not metrics:
+        raise ValueError(f"{path}: 'metrics' must be a non-empty list")
+    if not jobs:
+        raise ValueError(f"{path}: 'jobs' must be a non-empty mapping")
+
+    parsed = {}
+    for job_id, job_cfg in jobs.items():
+        job_cfg = job_cfg or {}
+        missing = [key for key in ("build", "problem") if not job_cfg.get(key)]
+        if missing:
+            raise ValueError(f"{path}: job {job_id} is missing {', '.join(missing)}")
+        parsed[int(job_id)] = job_cfg
+
+    # Resolve up front so a typo fails before the first query runs.
+    return [resolve(metric) for metric in metrics], parsed
+
+
+def run_query(cont, sql: str) -> pd.DataFrame:
+    """Drain a DSOS query into one dataframe."""
+    query = cont.query(CHUNK_ROWS)
     query.select(sql)
 
     chunks = []
-    df = query.next()
+    while (chunk := query.next()) is not None:
+        chunks.append(chunk.copy(deep=True))
 
-    while df is not None:
-        chunks.append(df.copy(deep=True))
-        df = query.next()
-
-    if not chunks:
-        return pd.DataFrame()
-
-    return pd.concat(chunks, ignore_index=True)
+    return pd.concat(chunks, ignore_index=True) if chunks else pd.DataFrame()
 
 
-def timestamp_to_seconds(series):
+def build_select(spec: MetricSpec, job_id: int) -> str:
+    columns = ", ".join(("timestamp", "component_id", *spec.columns))
+    return f"select {columns} from {spec.schema} where job_id == {job_id} order_by job_time_comp"
+
+
+def timestamp_to_seconds(series: pd.Series) -> pd.Series:
     if pd.api.types.is_datetime64_any_dtype(series):
         return series.astype("int64") / 1.0e9
     return series.astype(float)
 
 
-def get_run_dir(job_id, build, problem):
-    return os.path.join(
-        BASE_DIR,
-        "runs",
-        build,
-        problem,
-        str(job_id),
-    )
+def fetch_metric(query: QueryFn, job_id: int, name: str) -> pd.DataFrame:
+    """Every sample of one metric for one job, one row per (timestamp, component)."""
+    spec = METRICS[resolve(name)]
+    raw = query(build_select(spec, job_id))
 
-# -----------------------------
-# Metric fetchers
-# -----------------------------
+    if raw.empty:
+        return pd.DataFrame(columns=SAMPLE_COLUMNS)
 
-def fetch_active(cont, job_id):
-    sql = f"""
-select timestamp, job_id, component_id, Active
-from {MEM_SCHEMA}
-where job_id == {job_id}
-order_by job_time_comp
-"""
-
-    df = fetch_query(cont, sql)
-
-    if df.empty:
-        return df
-
-    df = df.copy()
-    df["timestamp"]    = timestamp_to_seconds(df["timestamp"])
-    df["job_id"]       = df["job_id"].astype(int)
+    df = raw.copy()
+    df["timestamp"] = timestamp_to_seconds(df["timestamp"])
     df["component_id"] = df["component_id"].astype(int)
-    df["Active"]       = df["Active"].astype(float)
+    df = df.sort_values(["component_id", "timestamp"], ignore_index=True)
 
-    df = df.sort_values(["component_id", "timestamp"])
+    # Derive per component so a counter rate never spans a node boundary.
+    groups = df.groupby("component_id", sort=False)[["timestamp", *spec.columns]]
+    df["value"] = pd.concat([spec.derive(group) for _, group in groups])
 
-    return df
+    df["job_id"] = job_id
+    df["metric"] = resolve(name)
+    df["unit"] = spec.unit
 
-def fetch_cpu(cont, job_id):
-    sql = f"""
-select timestamp, job_id, component_id, user, sys
-from {CPU_SCHEMA}
-where job_id == {job_id}
-order_by job_time_comp
-"""
-
-    df = fetch_query(cont, sql)
-
-    if df.empty:
-        return df
-
-    df = df.copy()
-    df["timestamp"]    = timestamp_to_seconds(df["timestamp"])
-    df["job_id"]       = df["job_id"].astype(int)
-    df["component_id"] = df["component_id"].astype(int)
-    df["user"]         = df["user"].astype(float)
-    df["sys"]          = df["sys"].astype(float)
-
-    df = df.sort_values(["component_id", "timestamp"])
-
-    df["cpu_counter"]       = df["user"] + df["sys"]
-    df["cpu_counter_delta"] = df.groupby("component_id")["cpu_counter"].diff()
-    df["time_delta_s"]      = df.groupby("component_id")["timestamp"].diff()
-
-    df["cpu_cores_used"] = (
-        df["cpu_counter_delta"] / df["time_delta_s"] / 100.0
-    )
-
-    df["cpu_cores_used"] = df["cpu_cores_used"].fillna(0.0)
-
-    return df[
-        [
-            "timestamp",
-            "job_id",
-            "component_id",
-            "user",
-            "sys",
-            "cpu_counter_delta",
-            "time_delta_s",
-            "cpu_cores_used",
-        ]
-    ].copy()
-
-# -----------------------------
-# Combine metrics
-# -----------------------------
-
-def merge_active_cpu(active_df, cpu_df):
-    merged_parts = []
-
-    for component_id, active_part in active_df.groupby("component_id"):
-        cpu_part = cpu_df[cpu_df["component_id"] == component_id].copy()
-
-        if cpu_part.empty:
-            continue
-
-        active_part = active_part.sort_values("timestamp")
-        cpu_part = cpu_part.sort_values("timestamp")
-
-        merged = pd.merge_asof(
-            active_part,
-            cpu_part,
-            on="timestamp",
-            by=["job_id", "component_id"],
-            direction="nearest",
-            tolerance=MERGE_TOLERANCE_SECONDS,
-        )
-
-        merged_parts.append(merged)
-
-    if not merged_parts:
-        return pd.DataFrame()
-
-    return pd.concat(merged_parts, ignore_index=True)
+    # A rate is undefined at a component's first sample; drop it rather than invent a zero.
+    return df.dropna(subset=["value"])[SAMPLE_COLUMNS]
 
 
-def build_result_dataframe(metric_data):
-    has_active = "Active" in metric_data and not metric_data["Active"].empty
-    has_cpu = "CPU" in metric_data and not metric_data["CPU"].empty
+def collect_job(query: QueryFn, job_id: int, metrics: Iterable[str]) -> pd.DataFrame:
+    """Full un-aggregated time series for one job, tidy and stacked across metrics."""
+    frames = [fetch_metric(query, job_id, name) for name in metrics]
+    frames = [frame for frame in frames if not frame.empty]
 
-    if has_active and has_cpu:
-        res = merge_active_cpu(metric_data["Active"], metric_data["CPU"])
-    elif has_active:
-        res = metric_data["Active"].copy()
-    elif has_cpu:
-        res = metric_data["CPU"].copy()
-    else:
-        return pd.DataFrame()
+    if not frames:
+        return pd.DataFrame(columns=TIDY_COLUMNS)
 
-    if res.empty:
-        return res
+    tidy = pd.concat(frames, ignore_index=True)
+    tidy = tidy.sort_values(["metric", "component_id", "timestamp"], ignore_index=True)
 
-    res = res.sort_values(["component_id", "timestamp"])
-    res["time_rel_s"] = res["timestamp"] - res["timestamp"].min()
+    # Shared origin so every metric's curve lines up on one axis.
+    tidy["time_rel_s"] = tidy["timestamp"] - tidy["timestamp"].min()
 
-    return res
+    return tidy[TIDY_COLUMNS]
 
-# -----------------------------
-# Per-job processing
-# -----------------------------
 
-def process_job(cont, job_id, job_cfg, metrics):
-    build   = job_cfg["build"]
-    problem = job_cfg["problem"]
-
-    run_dir = get_run_dir(job_id, build, problem)
-    os.makedirs(run_dir, exist_ok=True)
-
-    metric_data = {}
-
-    if "Active" in metrics:
-        metric_data["Active"] = fetch_active(cont, job_id)
-
-    if "CPU" in metrics:
-        metric_data["CPU"] = fetch_cpu(cont, job_id)
-
-    unsupported = sorted(set(metrics) - {"Active", "CPU"})
-    for metric in unsupported:
-        print(f"WARNING: unsupported metric '{metric}' ignored for job {job_id}")
-
-    res = build_result_dataframe(metric_data)
-
-    if res.empty:
-        raise RuntimeError(f"No LDMS data found for job_id={job_id}")
-
-    out_csv = os.path.join(run_dir, "ldms_metrics.csv")
-    res.to_csv(out_csv, index=False)
-
+def summarize(job_id: int, job_cfg: dict, tidy: pd.DataFrame, out_csv, status: str) -> dict:
     return {
         "job_id": job_id,
-        "build": build,
-        "problem": problem,
-        "run_dir": run_dir,
-        "out_csv": out_csv,
-        "rows": len(res),
-        "status": "ok",
+        "build": job_cfg.get("build", ""),
+        "problem": job_cfg.get("problem", ""),
+        "components": tidy["component_id"].nunique() if not tidy.empty else 0,
+        "rows": len(tidy),
+        "out_csv": str(out_csv),
+        "status": status,
     }
 
-# -----------------------------
-# Main Driver
-# -----------------------------
 
-def main():
+def process_job(query: QueryFn, runs_dir: Path, job_id: int, job_cfg: dict, metrics: list[str]) -> dict:
+    tidy = collect_job(query, job_id, metrics)
+
+    if tidy.empty:
+        return summarize(job_id, job_cfg, tidy, "", "no_data")
+
+    out_csv = runs_dir / job_cfg["build"] / job_cfg["problem"] / str(job_id) / "ldms_metrics.csv"
+    out_csv.parent.mkdir(parents=True, exist_ok=True)
+    tidy.to_csv(out_csv, index=False)
+    print(f"Wrote {out_csv} ({len(tidy)} rows)")
+
+    return summarize(job_id, job_cfg, tidy, out_csv, "ok")
+
+
+def parse_args(argv: list[str] | None = None) -> argparse.Namespace:
     parser = argparse.ArgumentParser(
-        description="Fetch LDMS metrics for jobs listed in a YAML file."
+        description="Write one un-aggregated CSV of LDMS metrics per job in a manifest.",
     )
+    parser.add_argument("manifest", type=Path, help="YAML manifest listing metrics and jobs.")
+    parser.add_argument("--runs-dir", type=Path, default=RUNS_DIR)
+    parser.add_argument("--data-dir", type=Path, default=DATA_DIR)
+    parser.add_argument("--sos-config", default=SOS_CONFIG)
+    parser.add_argument("--sos-database", default=SOS_DATABASE)
+    return parser.parse_args(argv)
 
-    parser.add_argument(
-        "yaml_file",
-        help="YAML file containing metrics and jobs.",
-    )
 
-    args = parser.parse_args()
-    manifest_file = args.yaml_file
+def main(argv: list[str] | None = None) -> None:
+    args = parse_args(argv)
+    metrics, jobs = load_manifest(args.manifest)
 
-    cfg_id = manifest_file.split("/")[-1].split("_")[-1].split(".")[0]
-    cfg = load_yaml(args.yaml_file)
-
-    metrics = cfg.get("metrics", [])
-    jobs = cfg.get("jobs", {})
-
-    if not metrics:
-        raise RuntimeError("YAML file must contain a non-empty 'metrics' list")
-
-    if not jobs:
-        raise RuntimeError("YAML file must contain a non-empty 'jobs' mapping")
-
-    sess = Sos.Session(SOS_CONFIG)
-    cont = sess.open(SOS_DATABASE)
+    cont = Sos.Session(args.sos_config).open(args.sos_database)
+    query = partial(run_query, cont)
 
     summaries = []
-
-    for job_id_raw, job_cfg in jobs.items():
-        job_id = int(job_id_raw)
-
-        print(f"\n=== Processing job {job_id} ===")
-
+    for job_id, job_cfg in jobs.items():
+        print(f"\n=== job {job_id} ===")
         try:
-            summary = process_job(cont, job_id, job_cfg, metrics)
-            summaries.append(summary)
-
-            print(f"Wrote {summary['out_csv']}")
-            print(f"Rows: {summary['rows']}")
-
-        except Exception as e:
-            print(f"ERROR processing job {job_id}: {e}")
+            summaries.append(process_job(query, args.runs_dir, job_id, job_cfg, metrics))
+        except Exception as error:
+            print(f"ERROR processing job {job_id}: {error}")
             traceback.print_exc()
+            summaries.append(summarize(job_id, job_cfg, pd.DataFrame(), "", "failed"))
 
-            summaries.append(
-                {
-                    "job_id": job_id,
-                    "build": job_cfg.get("build", ""),
-                    "problem": job_cfg.get("problem", ""),
-                    "run_dir": "",
-                    "out_csv": "",
-                    "rows": 0,
-                    "status": "failed",
-                }
-            )
+    args.data_dir.mkdir(parents=True, exist_ok=True)
+    summary_csv = args.data_dir / f"ldms_{args.manifest.stem}.csv"
+    summary_df = pd.DataFrame(summaries, columns=SUMMARY_COLUMNS)
+    summary_df.to_csv(summary_csv, index=False)
 
-    summary_df = pd.DataFrame(summaries)
-
-    os.makedirs(DATA_DIR, exist_ok=True)
-    output_file = os.path.join(DATA_DIR, f"ldms_{cfg_id}.csv")
-    summary_df.to_csv(output_file, index=False)
-
-    print(f"\nWrote summary: {output_file}")
-    print(summary_df)
+    print(f"\nWrote summary: {summary_csv}")
+    print(summary_df.to_string(index=False))
 
 
 if __name__ == "__main__":
