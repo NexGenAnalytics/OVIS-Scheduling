@@ -16,6 +16,7 @@ jobs:
       fail-fast: false
       matrix:
         app:
+          - common
           - database
           - hashing
 
