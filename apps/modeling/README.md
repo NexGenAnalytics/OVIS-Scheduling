@@ -11,6 +11,8 @@ Neural networks to create predictions of CPU and memory usage.
   - In `data/ldms/<job.build>/<job.problem>/<job.id>/ldms_metrics.csv`.
 - Load content.
 - Train and save 2 models.
+  - Models are save under `data/output/models/<name>.joblib`.
+  - Predictions are save under `data/output/predictions/<name>.csv`.
 
 ## Usage
 
