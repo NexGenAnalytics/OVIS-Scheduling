@@ -1,5 +1,7 @@
 # modeling
 
+Neural networks to create predictions of CPU and memory usage.
+
 ## Description
 
 - Read informations from `data/ldms/<manifest>.csv`.
@@ -12,5 +14,13 @@
 ## Usage
 
 ```bash
-(.venv) modeling --manifest {1}
+(.venv) modeling --train {manifest}
+(.venv) modeling --test {input-decks}
+```
+
+## Examples
+
+```bash
+(.venv) modeling --train data/ldms/ldms_manifest_20260921.csv
+(.venv) modeling --test data/input-decks/LammpsNemd/in.nemd
 ```
