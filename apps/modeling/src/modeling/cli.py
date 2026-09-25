@@ -1,9 +1,14 @@
 import csv
+import numpy as np
 import pandas as pd
 
 from dataclasses import dataclass
 from hashing.utils import create_hash
 from pathlib import Path
+from sklearn.compose import TransformedTargetRegressor
+from sklearn.neural_network import MLPRegressor
+from sklearn.pipeline import make_pipeline
+from sklearn.preprocessing import StandardScaler
 from typing import List
 
 @dataclass(frozen=True)
@@ -134,7 +139,46 @@ def load_jobs(jobs: List[Simulation]) -> List[SimulationContent]:
 
   return loaded_jobs
 
+def create_model() -> TransformedTargetRegressor:
+  regressor = make_pipeline(
+    StandardScaler(),
+    MLPRegressor(
+      hidden_layer_sizes=(64, 32),
+      solver="lbfgs",
+      max_iter=2000,
+      random_state=42,
+    ),
+  )
+
+  return TransformedTargetRegressor(
+    regressor=regressor,
+    transformer=StandardScaler(),
+  )
+
+def train_models(
+  simulations: List[SimulationContent]
+) -> tuple[TransformedTargetRegressor, TransformedTargetRegressor]:
+
+  if len(simulations) < 2:
+    raise ValueError("At least two simulations are required for training")
+
+  inputs = # TODO: inputdeckhash
+
+  cpu_targets = # TODO: cpuprofile
+
+  memory_targets = # TODO: memoryprofile
+
+  cpu_model = create_model()
+  memory_model = create_model()
+
+  cpu_model.fit(inputs, cpu_targets)
+  memory_model.fit(inputs, memory_targets)
+
+  return cpu_model, memory_model
+
 def main() -> None:
+  print("M, start")
+
   path_manifest = "data/ldms/ldms_manifest_20260921.csv"
 
   # LOADING MANIFEST
@@ -148,8 +192,7 @@ def main() -> None:
   datas: List[SimulationContent] = load_jobs(valid_jobs)
 
   # TRAINING MODELS
-  # TODO, future usage:
-  # cpu_model, memory_model = trainModels(??, ??, ??)
+  cpu_model, memory_model = train_models(datas)
 
   # SAVE MODELS
   # TODO
