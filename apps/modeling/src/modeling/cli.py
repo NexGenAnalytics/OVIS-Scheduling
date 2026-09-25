@@ -21,10 +21,15 @@ from typing import List
 # This is necessary because a machine-learning model needs fixed-size targets.
 PROFILE_POINTS = 128
 
+# hashing.utils._simhash produces a 32-bit SimHash. Representing each bit as a
+# separate feature preserves the Hamming-distance relationship between decks.
+HASH_BITS = 32
+
 MODEL_DIRECTORY = Path("data/output/models")
 
 CPU_MODEL_PATH = MODEL_DIRECTORY / "cpu_profile_model.joblib"
 MEMORY_MODEL_PATH = MODEL_DIRECTORY / "memory_profile_model.joblib"
+DURATION_MODEL_PATH = MODEL_DIRECTORY / "duration_model.joblib"
 
 # ------------------------------------------------------------------------------
 # Data structures
@@ -194,7 +199,12 @@ def create_model() -> TransformedTargetRegressor:
 # SimHash preparation
 # ------------------------------------------------------------------------------
 
-def hash_to_features(simhash: int, number_of_bits: int = 64) -> np.ndarray:
+def hash_to_features(
+  simhash: int,
+  number_of_bits: int = HASH_BITS,
+) -> np.ndarray:
+  """Convert a SimHash to binary features that preserve Hamming distance."""
+
   bit_mask = (1 << number_of_bits) - 1
   simhash = int(simhash) & bit_mask
 
@@ -282,15 +292,40 @@ def profile_to_target(
     measured_values,
   )
 
+def get_simulation_duration(simulation: SimulationContent) -> float:
+  """Return the simulation's total measured execution time in seconds."""
+
+  cpu_times = pd.to_numeric(
+    simulation.cpuprofile["time_rel_s"],
+    errors="coerce",
+  )
+  memory_times = pd.to_numeric(
+    simulation.memoryprofile["time_rel_s"],
+    errors="coerce",
+  )
+
+  duration_seconds = max(cpu_times.max(), memory_times.max())
+
+  if not np.isfinite(duration_seconds) or duration_seconds <= 0:
+    raise ValueError(
+      f"Simulation {simulation.id}: invalid execution duration"
+    )
+
+  return float(duration_seconds)
+
 # ------------------------------------------------------------------------------
 # Model training
 # ------------------------------------------------------------------------------
 
 def train_models(
   simulations: List[SimulationContent]
-) -> tuple[TransformedTargetRegressor, TransformedTargetRegressor]:
+) -> tuple[
+  TransformedTargetRegressor,
+  TransformedTargetRegressor,
+  TransformedTargetRegressor,
+]:
   """
-  Train one model for CPU profiles and one for memory profiles.
+  Train models for CPU profiles, memory profiles, and total duration.
   """
 
   x = len(simulations)
@@ -315,8 +350,16 @@ def train_models(
     for simulation in simulations
   ])
 
+  # Duration is learned separately so the normalized resource profiles can be
+  # converted back to a predicted time axis expressed in seconds.
+  duration_targets = np.array([
+    get_simulation_duration(simulation)
+    for simulation in simulations
+  ], dtype=np.float64)
+
   cpu_model = create_model()
   memory_model = create_model()
+  duration_model = create_model()
 
   print(f"Training CPU model with {x} simulations...")
   cpu_model.fit(inputs, cpu_targets)
@@ -324,7 +367,10 @@ def train_models(
   print(f"Training memory model with {x} simulations...")
   memory_model.fit(inputs, memory_targets)
 
-  return cpu_model, memory_model
+  print(f"Training duration model with {x} simulations...")
+  duration_model.fit(inputs, duration_targets)
+
+  return cpu_model, memory_model, duration_model
 
 # ------------------------------------------------------------------------------
 # Model prediction
@@ -334,13 +380,10 @@ def predict_profiles(
   input_deck_hash: int,
   cpu_model: TransformedTargetRegressor,
   memory_model: TransformedTargetRegressor,
-) -> pd.DataFrame:
+  duration_model: TransformedTargetRegressor,
+) -> tuple[pd.DataFrame, float]:
   """
-  Predict CPU and memory profiles from an input-deck SimHash.
-
-  The returned time axis is normalized:
-    0.0 means the beginning of the simulation.
-    1.0 means the end of the simulation.
+  Predict CPU, memory, and the total execution time from a SimHash.
   """
 
   # Convert the 32-bit SimHash to the same binary feature representation
@@ -349,19 +392,31 @@ def predict_profiles(
 
   predicted_cpu = cpu_model.predict(model_input)[0]
   predicted_memory = memory_model.predict(model_input)[0]
+  predicted_duration_seconds = float(
+    duration_model.predict(model_input)[0]
+  )
 
   # Regression models can produce small negative values even though CPU
   # and memory usage cannot physically be negative.
   predicted_cpu = np.maximum(predicted_cpu, 0.0)
   predicted_memory = np.maximum(predicted_memory, 0.0)
+  predicted_duration_seconds = max(predicted_duration_seconds, 0.0)
 
-  normalized_time = np.linspace(0.0, 1.0, PROFILE_POINTS)
+  # Scale the profile positions to the predicted total execution time. The
+  # resulting time_s column is expressed in seconds, not normalized units.
+  time_seconds = np.linspace(
+    0.0,
+    predicted_duration_seconds,
+    PROFILE_POINTS,
+  )
 
-  return pd.DataFrame({
-    "normalized_time": normalized_time,
+  prediction = pd.DataFrame({
+    "time_s": time_seconds,
     "cpu_cores_used": predicted_cpu,
     "mem_active_kb": predicted_memory,
   })
+
+  return prediction, predicted_duration_seconds
 
 # ---------------------------------------------------------------------------
 # Model persistence
@@ -370,27 +425,32 @@ def predict_profiles(
 def save_models(
   cpu_model: TransformedTargetRegressor,
   memory_model: TransformedTargetRegressor,
+  duration_model: TransformedTargetRegressor,
 ) -> None:
-  """Save both trained models to disk."""
+  """Save all trained models to disk."""
 
   MODEL_DIRECTORY.mkdir(parents=True, exist_ok=True)
 
   joblib.dump(cpu_model, CPU_MODEL_PATH)
   joblib.dump(memory_model, MEMORY_MODEL_PATH)
+  joblib.dump(duration_model, DURATION_MODEL_PATH)
 
   print(f"CPU model saved to {CPU_MODEL_PATH}")
   print(f"Memory model saved to {MEMORY_MODEL_PATH}")
+  print(f"Duration model saved to {DURATION_MODEL_PATH}")
 
 def load_models() -> tuple[
   TransformedTargetRegressor,
-  TransformedTargetRegressor
+  TransformedTargetRegressor,
+  TransformedTargetRegressor,
 ]:
-  """Load previously trained CPU and memory models."""
+  """Load previously trained CPU, memory, and duration models."""
 
   cpu_model = joblib.load(CPU_MODEL_PATH)
   memory_model = joblib.load(MEMORY_MODEL_PATH)
+  duration_model = joblib.load(DURATION_MODEL_PATH)
 
-  return cpu_model, memory_model
+  return cpu_model, memory_model, duration_model
 
 # ------------------------------------------------------------------------------
 # CLI operations
@@ -416,11 +476,11 @@ def run_training(path_manifest: Path) -> None:
   print(f"Loaded simulations: {len(simulations)}")
 
   # TRAINING MODELS
-  cpu_model, memory_model = train_models(simulations)
+  cpu_model, memory_model, duration_model = train_models(simulations)
   print("Training completed")
 
   # SAVE MODELS
-  save_models(cpu_model, memory_model)
+  save_models(cpu_model, memory_model, duration_model)
   print("Saving completed")
 
 def run_prediction(input_deck_path: Path) -> None:
@@ -445,6 +505,12 @@ def run_prediction(input_deck_path: Path) -> None:
       "Run modeling --train first."
     )
 
+  if not DURATION_MODEL_PATH.is_file():
+    raise FileNotFoundError(
+      f"Duration model does not exist: {DURATION_MODEL_PATH}. "
+      "Run modeling --train first."
+    )
+
   print(f"Loading input deck: {input_deck_path}")
 
   # Use the same LAMMPS normalizer used during model training.
@@ -455,12 +521,13 @@ def run_prediction(input_deck_path: Path) -> None:
 
   print(f"Input-deck SimHash: {input_deck_hash}")
 
-  cpu_model, memory_model = load_models()
+  cpu_model, memory_model, duration_model = load_models()
 
-  prediction = predict_profiles(
+  prediction, predicted_duration_seconds = predict_profiles(
     input_deck_hash=input_deck_hash,
     cpu_model=cpu_model,
     memory_model=memory_model,
+    duration_model=duration_model,
   )
 
   # Save the prediction next to the trained-model output directory.
@@ -474,6 +541,10 @@ def run_prediction(input_deck_path: Path) -> None:
 
   prediction.to_csv(prediction_path, index=False)
 
+  print(
+    f"Predicted total duration: "
+    f"{predicted_duration_seconds:.3f} seconds"
+  )
   print(prediction.to_string(index=False))
   print(f"Prediction saved to {prediction_path}")
 
@@ -493,7 +564,7 @@ def main() -> None:
   )
 
   commands.add_argument(
-    "--predict", type=Path, metavar="INPUT_DECK",
+    "--test", "--predict", dest="test", type=Path, metavar="INPUT_DECK",
     help="Predict CPU and memory profiles for an input deck",
   )
 
@@ -502,6 +573,6 @@ def main() -> None:
   if args.train is not None:
     run_training(args.train)
   else:
-    run_prediction(args.predict)
+    run_prediction(args.test)
 
   print("M, end")
