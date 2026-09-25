@@ -68,8 +68,8 @@ source .venv/bin/activate # for Linux and Mac
 - `(.venv) python [command] -v` makes the tests verbose.
 
 ```bash
+(.venv) python -m unittest discover apps/common/tests
 (.venv) python -m unittest discover apps/database/tests
-
 (.venv) python -m unittest discover apps/hashing/tests
 ```
 
