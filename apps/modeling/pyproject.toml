@@ -1,7 +1,9 @@
 [project]
 name = "modeling"
 version = "0.1.0"
-dependencies = []
+dependencies = [
+  "pandas==3.0.5",
+]
 
 [project.scripts]
 modeling = "modeling.cli:main"
