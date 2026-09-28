@@ -19,6 +19,7 @@ jobs:
           - common
           - database
           - hashing
+          - modeling
 
     steps:
       - uses: actions/checkout@v4
