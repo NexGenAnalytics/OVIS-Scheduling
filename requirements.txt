@@ -1,5 +1,2 @@
--e apps/common
--e apps/database
--e apps/hashing
--e apps/modeling
--e apps/scheduler
+-e apps/modeling-prediction
+-e apps/modeling-training

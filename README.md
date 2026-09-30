@@ -2,82 +2,46 @@
 
 `NexGen Analytics` work for Sandia `Open-source Varnish Information System`.
 
-Goal:
-
-* The ability to (A) evaluate simulations in order to (B) predict and, thereby,
-(C) optimize the use of clusters.
-
-Proposed solution:
-
-* (A) Retrieving simulation initial parameters (input decks) along with their run
-profiles (CPU and memory usage). They are identified by a hash.
-
-* (B) Training a neural network based on simulations input decks and retrieved
-run profiles (data).
-
-* (C) Scheduling the simulations to be run, given the input decks and the current
-status of the clusters: using the nearest hash, or using the neural network.
-
-## Apps
-
-- `common`, common tools across apps (`read_file` for example).
-- `database`, store predictions (from `modeling`) and hashs (from `hashing`).
-- `hashing`, [README](./apps/hashing/README.md).
-- `modeling`, create a prediction of CPU and memory usage.
-- `scheduler`, (issue #9).
-
-## How to use
+## Setup
 
 ```bash
 python3 -m venv .venv
 source .venv/bin/activate # for Linux and Mac
 .\.venv\Scripts\activate # for Windows
-
 (.venv) pip install -r requirements.txt
+```
 
-(.venv) database --list-jobs
-(.venv) database --list-by-method {method_name}
-(.venv) database --get-id {id}
-(.venv) database --get-hash-distance-between {id_A} {id_B}
+## How to use
 
-(.venv) hashing --input {path/to/file} --normalizer {method_name} [--save]
-# see examples below
-# see tests below
+```bash
+(.venv) modeling-training --simu {path} --deta {int} --feat {list}
+# simu (simulations): path to the folder with input decks and run profiles
+# deta (details): result integer because ML models needs fixed-size targets
+# feat (features): strings/variables that are impactfull on cpu and memory usage
 
-(.venv) modeling
+(.venv) modeling-prediction --models {path} --input {path}
+# models: path to load models
+# input: path to the input deck you want to predict
+```
 
-(.venv) scheduler --find-nearest-to {path/to/file} {method_name}
+## How to quit
 
-(.venv) deactivate
+```bash
+(.venv) deactivate # to exit venv
 ```
 
 # Examples
 
 ```bash
-(.venv) database --list-by-method lammps_in_files
+(.venv) modeling-training \
+  --simu data/ \
+  --deta 50 \
+  --feat "variable nsteps" "velocity"
 
-(.venv) hashing --input data/input-decks/TrilinosDebug/config.txt --normalizer cmake_cache_variables
-(.venv) hashing --input data/input-decks/LammpsObstacle/in.obstacle --normalizer lammps_in_files --save
-(.venv) hashing --input data/input-decks/LammpsTracker/in.tracker --normalizer lammps_in_files
-
-(.venv) scheduler --find-nearest-to data/input-decks/LammpsNemd/in.nemd lammps_in_files
-```
-
-# Tests
-
-- `(.venv) python [command] -v` makes the tests verbose.
-
-```bash
-(.venv) python -m unittest discover apps/database/tests
-
-(.venv) python -m unittest discover apps/hashing/tests
+(.venv) modeling-prediction --models outputs/ \
+  --input /data/input-decks/lammps/in.binary
 ```
 
 ## Infos
 
 - Entry point for an app is `apps/[name]/src/[name]/cli.py`.
-
-## Devs notes
-
-- In `apps/modeling`, there are some WIP scripts.
-- In `apps/scheduler`, there are some WIP and TODO scripts, to update with new archi.
