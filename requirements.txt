@@ -1,2 +1,3 @@
+-e apps/common
 -e apps/modeling-prediction
 -e apps/modeling-training

@@ -16,8 +16,8 @@ source .venv/bin/activate # for Linux and Mac
 ```bash
 (.venv) modeling-training --simu {path} --deta {int} --feat {list}
 # simu (simulations): path to the folder with input decks and run profiles
-# deta (details): result integer because ML models needs fixed-size targets
-# feat (features): strings/variables that are impactfull on cpu and memory usage
+# deta (details): result integer because ML models needs fixed-size targets (min. 3)
+# feat (features): optional, strings/variables that are impactfull on cpu and memory usage
 
 (.venv) modeling-prediction --models {path} --input {path}
 # models: path to load models
@@ -33,10 +33,12 @@ source .venv/bin/activate # for Linux and Mac
 # Examples
 
 ```bash
+(.venv) modeling-training --simu data/ --deta 5
+
 (.venv) modeling-training \
   --simu data/ \
   --deta 50 \
-  --feat "variable nsteps" "velocity"
+  --feat "variable nsteps"
 
 (.venv) modeling-prediction \
   --models outputs/ \

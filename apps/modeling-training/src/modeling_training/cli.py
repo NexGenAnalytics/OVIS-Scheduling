@@ -1,10 +1,10 @@
 import argparse
+from common import (Feature, Metric, Simulation)
+from common import (parse_inputdeck, parse_runprofile)
 import csv
-from dataclasses import dataclass
-from io import StringIO
 import joblib
+import numpy as np
 from pathlib import Path
-import shlex
 from sklearn.compose import TransformedTargetRegressor
 from sklearn.neural_network import MLPRegressor
 from sklearn.pipeline import make_pipeline
@@ -14,74 +14,8 @@ def init_parser() -> argparse.Namespace:
   parser = argparse.ArgumentParser(prog="modeling-training")
   parser.add_argument("--simu", type=Path, required=True)
   parser.add_argument("--deta", type=int, required=True)
-  parser.add_argument("--feat", nargs="+", type=str, required=True)
+  parser.add_argument("--feat", nargs="+", type=str, required=False)
   return parser.parse_args()
-
-@dataclass(frozen=True)
-class Feature:
-  """
-  Each LAMMPS instruction/feature as (command, arguments).
-  """
-  command: str
-  arguments: list[str]
-
-@dataclass(frozen=True)
-class Metric:
-  timestamp: float
-  time_rel_s: float
-  #job_id: int
-  #component_id: int
-  metric: str
-  #unit: str
-  value: float
-
-@dataclass(frozen=True)
-class Simulation:
-  id: int
-  inputdeck: list[Feature]
-  runprofile: list[Metric]
-
-def parse_inputdeck(content: str) -> list[Feature]:
-  """
-  Convert LAMMPS input deck into Feature objects.
-  """
-  features: list[Feature] = []
-
-  for line_number, line in enumerate(content.splitlines(), start=1):
-    try:
-      tokens = shlex.split(line, comments=True, posix=True)
-    except ValueError as error:
-      raise ValueError(f"Invalid input-deck {line_number}") from error
-
-    if not tokens: continue
-
-    command, *arguments = tokens
-    feature = Feature(command = command, arguments = arguments)
-    features.append(feature)
-
-  return features
-
-def parse_runprofile(content: str) -> list[Metric]:
-  metrics: list[Metric] = []
-
-  reader = csv.DictReader(StringIO(content))
-
-  for line_number, row in enumerate(reader, start=2):
-    try:
-      metric = Metric(
-        timestamp=float(row["timestamp"]),
-        time_rel_s=float(row["time_rel_s"]),
-        #job_id=int(row["job_id"]),
-        #component_id=int(row["component_id"]),
-        metric=row["metric"],
-        #unit=row["unit"],
-        value=float(row["value"]),
-      )
-      metrics.append(metric)
-    except (TypeError, ValueError) as error:
-      raise ValueError(f"Invalid {line_number}") from error
-
-  return metrics
 
 def load_simulations(path: Path) -> list[Simulation]:
   simulations: list[Simulation] = []
@@ -121,28 +55,91 @@ def load_simulations(path: Path) -> list[Simulation]:
   return simulations
 
 def create_model() -> TransformedTargetRegressor:
-  regressor = make_pipeline(
-    StandardScaler(),
-    MLPRegressor(
-      hidden_layer_sizes=(64, 32),
-      solver="lbfgs",
-      max_iter=2000,
-      random_state=42,
-    ),
+  mlp_regressor = MLPRegressor(
+    hidden_layer_sizes=(64, 32), solver="lbfgs", max_iter=2000, random_state=42
   )
-
-  return TransformedTargetRegressor(
-    regressor=regressor, transformer=StandardScaler(),
+  model = TransformedTargetRegressor(
+    regressor=make_pipeline(StandardScaler(), mlp_regressor),
+    transformer=StandardScaler(),
   )
+  return model
 
-def train_cpu_model(
+def find_variable(inputdeck: list[Feature], name: str) -> float:
+  for feature in inputdeck:
+    if (
+      feature.command == "variable"
+      and len(feature.arguments) >= 3
+      and feature.arguments[0] == name
+    ):
+      return float(feature.arguments[2])
+  raise ValueError(f"Missing numeric variable: {name}")
+
+def train_model(
   simulations: list[Simulation],
   details: int,
-  features: list[str]
+  features: list[str] | None,
+  metric: str
 ) -> TransformedTargetRegressor:
-  # TODO
+  # Pre-checks
+  if not simulations:
+    raise ValueError("No simulations available for training")
 
-  return -1
+  if details < 2:
+    raise ValueError("details must be at least 2")
+
+  # X is the numeric description of each LAMMPS input deck.
+  # X.shape == (number_of_simulations, number_of_input_features)
+  X: list[list[float]] = []
+
+  # y is the observed [column] (example: cpu_cores_used) profile corresponding
+  # to that deck.
+  # y.shape == (number_of_simulations, details)
+  y: list[np.ndarray] = []
+
+  for simulation in simulations:
+    # Fixed-length description extracted from the input deck
+    inputdeck = simulation.inputdeck
+    deck_vector = [
+      find_variable(inputdeck, "nx"),
+      #find_variable(inputdeck, "rho"),
+      #find_variable(inputdeck, "temp"),
+      #find_variable(inputdeck, "rc"),
+      find_variable(inputdeck, "nsteps"),
+    ]
+
+    # Only the requested metric
+    metrics = [
+      point
+      for point in simulation.runprofile
+      if point.metric == metric
+    ]
+
+    # Ensure chronological order
+    metrics.sort(key=lambda point: point.time_rel_s)
+
+    times = np.asarray([point.time_rel_s for point in metrics], dtype=float)
+    values = np.asarray([point.value for point in metrics], dtype=float)
+
+    # Exactly `details` positions for every simulation
+    requested_times = np.linspace(times[0], times[-1], details)
+
+    resampled_values = np.interp(requested_times, times, values)
+
+    X.append(deck_vector)
+    y.append(resampled_values)
+
+  X = np.asarray(X, dtype=float)
+  y = np.asarray(y, dtype=float)
+
+  print("X shape:", X.shape)
+  print("y shape:", y.shape)
+  print("First X row:", X[0])
+  print("First y row:", y[0])
+
+  model = create_model()
+  model.fit(X, y)
+
+  return model
 
 def save_model(model: TransformedTargetRegressor, name: str) -> bool:
   directory = Path("output/models")
@@ -151,6 +148,7 @@ def save_model(model: TransformedTargetRegressor, name: str) -> bool:
   filename = f"{name}_model.joblib"
   modelpath = directory / filename
   joblib.dump(model, modelpath)
+  print(f"Save {name} ok")
 
   return True
 
@@ -159,13 +157,12 @@ def main() -> None:
 
   simulations: list[Simulation] = load_simulations(args.simu)
 
-  # print(simulations[1].id)
-  print(simulations[1].inputdeck)
-
   cpu_model: TransformedTargetRegressor = train_model(
     simulations, args.deta, args.feat, "cpu_cores_used"
   )
-  # print(cpu_model)
+  saved = save_model(cpu_model, "cpu")
 
-  saved: bool = save_model(cpu_model, "cpu")
-  print(f"Saved?: {saved}")
+  mem_model: TransformedTargetRegressor = train_model(
+    simulations, args.deta, args.feat, "mem_active_kb"
+  )
+  saved = save_model(mem_model, "mem")
