@@ -1,7 +1,11 @@
 import argparse
 import csv
 from dataclasses import dataclass
+import joblib
 from pathlib import Path
+from sklearn.compose import TransformedTargetRegressor
+from sklearn.pipeline import make_pipeline
+from sklearn.preprocessing import StandardScaler
 
 def init_parser() -> argparse.Namespace:
   parser = argparse.ArgumentParser(prog="modeling-training")
@@ -33,8 +37,9 @@ def load_simulations(path: Path) -> list[Simulation]:
 
       job_id = row["job_id"]
       problem = row["problem"]
+      filename = f"in.{problem}"
 
-      path_inputdeck = path_inputdecks / f"in.{problem}"
+      path_inputdeck = path_inputdecks / filename
       path_profile = path_profiles / problem / job_id / "ldms_metrics.csv"
 
       inputdeck_content = path_inputdeck.read_text(encoding="utf-8")
@@ -49,12 +54,43 @@ def load_simulations(path: Path) -> list[Simulation]:
 
   return simulations
 
+def create_model() -> TransformedTargetRegressor:
+  regressor = make_pipeline(
+    StandardScaler(),
+    MLPRegressor(
+      hidden_layer_sizes=(64, 32),
+      solver="lbfgs",
+      max_iter=2000,
+      random_state=42,
+    ),
+  )
+
+  return TransformedTargetRegressor(
+    regressor=regressor,
+    transformer=StandardScaler(),
+  )
+
+def train_cpu_model(simulations: list[Simulation], details: int, features: list[str]):
+  # TODO
+
+  return -1
+
+def save_model(model: TransformedTargetRegressor, name: str):
+  directory = Path("output/models")
+  directory.mkdir(parents=True, exist_ok=True)
+
+  filename = f"{name}_model.joblib"
+  modelpath = directory / filename
+  joblib.dump(model, modelpath)
+
+  return True
+
 def main() -> None:
   args: argparse.Namespace = init_parser()
 
   simulations: list[Simulation] = load_simulations(args.simu)
 
-  print(len(simulations))
+  cpu_model: TransformedTargetRegressor = train_cpu_model(simulations, args.deta, args.feat)
 
-  # print(path_profiles)
-  print(args.feat)
+  saved: bool = save_model(cpu_model, "cpu")
+  print(f"Saved?: {saved}")

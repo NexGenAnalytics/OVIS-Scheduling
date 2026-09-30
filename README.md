@@ -38,7 +38,8 @@ source .venv/bin/activate # for Linux and Mac
   --deta 50 \
   --feat "variable nsteps" "velocity"
 
-(.venv) modeling-prediction --models outputs/ \
+(.venv) modeling-prediction \
+  --models outputs/ \
   --input /data/input-decks/lammps/in.binary
 ```
 
