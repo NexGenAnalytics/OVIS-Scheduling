@@ -3,6 +3,7 @@ import csv
 from dataclasses import dataclass
 import joblib
 from pathlib import Path
+import shlex
 from sklearn.compose import TransformedTargetRegressor
 from sklearn.pipeline import make_pipeline
 from sklearn.preprocessing import StandardScaler
@@ -15,10 +16,38 @@ def init_parser() -> argparse.Namespace:
   return parser.parse_args()
 
 @dataclass(frozen=True)
+class Feature:
+  """
+  Each LAMMPS instruction/feature as (command, arguments).
+  """
+  command: str
+  arguments: list[str]
+
+@dataclass(frozen=True)
 class Simulation:
   id: int
-  inputdeck: str
+  inputdeck: list[Feature]
   runprofile: str
+
+def parse_inputdeck(content: str) -> list[Feature]:
+  """
+  Convert LAMMPS input deck into Feature objects.
+  """
+  features: list[Feature] = []
+
+  for line_number, line in enumerate(content.splitlines(), start=1):
+    try:
+      tokens = shlex.split(line, comments=True, posix=True)
+    except ValueError as error:
+      raise ValueError(f"Invalid input-deck {line_number}") from error
+
+    if not tokens: continue
+
+    command, *arguments = tokens
+    feature = Feature(command = command, arguments = arguments)
+    features.append(feature)
+
+  return features
 
 def load_simulations(path: Path) -> list[Simulation]:
   simulations: list[Simulation] = []
@@ -42,8 +71,10 @@ def load_simulations(path: Path) -> list[Simulation]:
       path_inputdeck = path_inputdecks / filename
       path_profile = path_profiles / problem / job_id / "ldms_metrics.csv"
 
-      inputdeck_content = path_inputdeck.read_text(encoding="utf-8")
-      runprofile_content = path_profile.read_text(encoding="utf-8")
+      inputdeck_content: str = path_inputdeck.read_text(encoding="utf-8")
+      runprofile_content: str = path_profile.read_text(encoding="utf-8")
+
+      inputdeck_content: list[Feature] = parse_inputdeck(inputdeck_content)
 
       simulation = Simulation(
         id = int(job_id),
@@ -66,16 +97,19 @@ def create_model() -> TransformedTargetRegressor:
   )
 
   return TransformedTargetRegressor(
-    regressor=regressor,
-    transformer=StandardScaler(),
+    regressor=regressor, transformer=StandardScaler(),
   )
 
-def train_cpu_model(simulations: list[Simulation], details: int, features: list[str]):
+def train_cpu_model(
+  simulations: list[Simulation],
+  details: int,
+  features: list[str]
+) -> TransformedTargetRegressor:
   # TODO
 
   return -1
 
-def save_model(model: TransformedTargetRegressor, name: str):
+def save_model(model: TransformedTargetRegressor, name: str) -> bool:
   directory = Path("output/models")
   directory.mkdir(parents=True, exist_ok=True)
 
@@ -90,7 +124,13 @@ def main() -> None:
 
   simulations: list[Simulation] = load_simulations(args.simu)
 
-  cpu_model: TransformedTargetRegressor = train_cpu_model(simulations, args.deta, args.feat)
+  # print(simulations[1].id)
+  print(simulations[1].inputdeck)
+
+  cpu_model: TransformedTargetRegressor = train_model(
+    simulations, args.deta, args.feat, "cpu_cores_used"
+  )
+  # print(cpu_model)
 
   saved: bool = save_model(cpu_model, "cpu")
   print(f"Saved?: {saved}")
