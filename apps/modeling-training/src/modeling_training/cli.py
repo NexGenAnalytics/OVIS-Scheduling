@@ -1,10 +1,12 @@
 import argparse
 import csv
 from dataclasses import dataclass
+from io import StringIO
 import joblib
 from pathlib import Path
 import shlex
 from sklearn.compose import TransformedTargetRegressor
+from sklearn.neural_network import MLPRegressor
 from sklearn.pipeline import make_pipeline
 from sklearn.preprocessing import StandardScaler
 
@@ -24,10 +26,20 @@ class Feature:
   arguments: list[str]
 
 @dataclass(frozen=True)
+class Metric:
+  timestamp: float
+  time_rel_s: float
+  #job_id: int
+  #component_id: int
+  metric: str
+  #unit: str
+  value: float
+
+@dataclass(frozen=True)
 class Simulation:
   id: int
   inputdeck: list[Feature]
-  runprofile: str
+  runprofile: list[Metric]
 
 def parse_inputdeck(content: str) -> list[Feature]:
   """
@@ -48,6 +60,28 @@ def parse_inputdeck(content: str) -> list[Feature]:
     features.append(feature)
 
   return features
+
+def parse_runprofile(content: str) -> list[Metric]:
+  metrics: list[Metric] = []
+
+  reader = csv.DictReader(StringIO(content))
+
+  for line_number, row in enumerate(reader, start=2):
+    try:
+      metric = Metric(
+        timestamp=float(row["timestamp"]),
+        time_rel_s=float(row["time_rel_s"]),
+        #job_id=int(row["job_id"]),
+        #component_id=int(row["component_id"]),
+        metric=row["metric"],
+        #unit=row["unit"],
+        value=float(row["value"]),
+      )
+      metrics.append(metric)
+    except (TypeError, ValueError) as error:
+      raise ValueError(f"Invalid {line_number}") from error
+
+  return metrics
 
 def load_simulations(path: Path) -> list[Simulation]:
   simulations: list[Simulation] = []
@@ -71,10 +105,11 @@ def load_simulations(path: Path) -> list[Simulation]:
       path_inputdeck = path_inputdecks / filename
       path_profile = path_profiles / problem / job_id / "ldms_metrics.csv"
 
-      inputdeck_content: str = path_inputdeck.read_text(encoding="utf-8")
-      runprofile_content: str = path_profile.read_text(encoding="utf-8")
+      inputdeck_str: str = path_inputdeck.read_text(encoding="utf-8")
+      runprofile_str: str = path_profile.read_text(encoding="utf-8")
 
-      inputdeck_content: list[Feature] = parse_inputdeck(inputdeck_content)
+      inputdeck_content: list[Feature] = parse_inputdeck(inputdeck_str)
+      runprofile_content: list[Metric] = parse_runprofile(runprofile_str)
 
       simulation = Simulation(
         id = int(job_id),
