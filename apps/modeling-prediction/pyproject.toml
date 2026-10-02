@@ -1,7 +1,9 @@
 [project]
 name = "modeling-prediction"
 version = "0.1.0"
-dependencies = []
+dependencies = [
+  "common==0.1.0",
+]
 
 [project.scripts]
 modeling-prediction = "modeling_prediction.cli:main"

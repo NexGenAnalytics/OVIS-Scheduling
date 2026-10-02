@@ -19,8 +19,8 @@ source .venv/bin/activate # for Linux and Mac
 # deta (details): result integer because ML models needs fixed-size targets (min. 3)
 # feat (features): optional, strings/variables that are impactfull on cpu and memory usage
 
-(.venv) modeling-prediction --models {path} --input {path}
-# models: path to load models
+(.venv) modeling-prediction --model {path} --input {path}
+# model: path to load model
 # input: path to the input deck you want to predict
 ```
 
@@ -41,8 +41,8 @@ source .venv/bin/activate # for Linux and Mac
   --feat "variable nsteps"
 
 (.venv) modeling-prediction \
-  --models outputs/ \
-  --input /data/input-decks/lammps/in.binary
+  --model output/models/cpu_model.joblib \
+  --input data/input-decks/lammps/in.binary_lj_032k_150k
 ```
 
 ## Infos

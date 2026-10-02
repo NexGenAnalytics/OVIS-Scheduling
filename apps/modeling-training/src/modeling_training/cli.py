@@ -1,6 +1,7 @@
 import argparse
 from common import (Feature, Metric, Simulation)
 from common import (parse_inputdeck, parse_runprofile)
+from common import find_variable
 import csv
 import joblib
 import numpy as np
@@ -63,16 +64,6 @@ def create_model() -> TransformedTargetRegressor:
     transformer=StandardScaler(),
   )
   return model
-
-def find_variable(inputdeck: list[Feature], name: str) -> float:
-  for feature in inputdeck:
-    if (
-      feature.command == "variable"
-      and len(feature.arguments) >= 3
-      and feature.arguments[0] == name
-    ):
-      return float(feature.arguments[2])
-  raise ValueError(f"Missing numeric variable: {name}")
 
 def train_model(
   simulations: list[Simulation],
