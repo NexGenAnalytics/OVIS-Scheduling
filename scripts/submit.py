@@ -1,225 +1,159 @@
 #!/usr/bin/env python3
 
-import os
-import sys
+"""Submit one Slurm job per entry in the LAMMPS run plan and record them in a manifest."""
+
 import argparse
-import subprocess
 import datetime as dt
+import fnmatch
+import hashlib
+import shutil
+import subprocess
+import sys
+from pathlib import Path
 
 import yaml
 
-# -----------------------------
-# Global configuration
-# -----------------------------
-
-# Configurable
-METRICS = ["Active", "CPU"]
-
-# SLURM
-ACCOUNT   = "fy250066"
+ACCOUNT = "fy250066"
 PARTITION = "batch"
-NODES     = 1          # this can change
-NTASKS    = 4          # this can change
-TIME      = "01:00:00" # this can change
+METRICS = ["mem_active_kb", "cpu_cores_used"]
 
-# OpenMP
-OMP_NUM_THREADS = 1
+REPO = Path(__file__).resolve().parents[1]
+DECKS_DIR = REPO / "data" / "input-decks" / "lammps"
+PLAN = DECKS_DIR / "plan.yaml"
+MANIFESTS_DIR = REPO / "data" / "manifests"
+RUNNER = REPO / "scripts" / "run.sh"
+ROOT = Path("/gpfs/cwschil/Scheduling")
 
-# Directories
-PROJECT_DIRECTORY = os.path.dirname(os.path.dirname(os.path.realpath(__file__)))
-DATA_DIRECTORY    = os.path.join(PROJECT_DIRECTORY, "data")
-
-DECKS_DIR     = os.path.join(DATA_DIRECTORY, "input-decks", "lammps")
-OUTPUT_DIR    = os.path.join(DATA_DIRECTORY, "ldms")
-MANIFESTS_DIR = os.path.join()
-
-# Derived
-RUNNER   = # pass the path to this
-TODAY    = dt.datetime.now().strftime("%Y%m%d")
-MANIFEST = os.path.join(MANIFESTS_DIR, f"manifest_{TODAY}.yaml")
-
-# -----------------------------
-# Helpers
-# -----------------------------
-
-def problem_from_deck(deck_path):
-    name = os.path.basename(deck_path)
-
-    if not name.startswith("in."):
-        raise ValueError(f"Deck does not start with 'in.': {deck_path}")
-
-    return name[len("in."):]
+PLAN_KEYS = {"build", "nodes", "ntasks_per_node", "omp_num_threads", "time"}
 
 
-def find_decks(decks_dir, problems=None):
-    if problems:
-        decks = []
-        for problem in problems:
-            deck = os.path.join(decks_dir, f"in.{problem}")
-            if not os.path.exists(deck):
-                raise FileNotFoundError(f"Missing deck: {deck}")
-            decks.append(deck)
-        return decks
-
-    decks = []
-    for name in sorted(os.listdir(decks_dir)):
-        if name.startswith("in."):
-            decks.append(os.path.join(decks_dir, name))
-
-    return decks
+def hours(walltime):
+    h, m, s = (int(part) for part in walltime.split(":"))
+    return h + m / 60 + s / 3600
 
 
-def read_nodelist_file(path, max_nodes=None):
-    nodes = []
-
-    with open(path, "r") as f:
-        for line in f:
-            line = line.strip()
-
-            if not line or line.startswith("#"):
-                continue
-
-            # Accept either:
-            #   mz1330
-            # or:
-            #   mz1330 5101330
-            node = line.split()[0]
-
-            if node.startswith("mz"):
-                nodes.append(node)
-
-            if max_nodes is not None and len(nodes) >= max_nodes:
-                break
-
-    if not nodes:
-        raise RuntimeError(f"No nodes found in {path}")
-
-    return ",".join(nodes)
+def load_plan(path):
+    plan = yaml.safe_load(path.read_text()) or {}
+    return plan.get("defaults") or {}, plan.get("decks") or {}
 
 
-def submit_job(args, problem):
-    job_output_dir = os.path.join(OUTPUT_DIR, problem)
-    os.makedirs(job_output_dir, exist_ok=True)
+def resolve_jobs(defaults, overrides, problems):
+    """One resolved run config per (deck, plan entry); decks absent from the plan use the defaults."""
+    unknown = sorted(set(overrides) - set(problems))
+    if unknown:
+        raise ValueError(f"plan lists decks that do not exist: {', '.join(unknown)}")
 
-    export_vars = [
-        "ALL",
-        f"BUILD={args.build}",
-        f"PROBLEM={problem}",
-        f"BASE_DIR={PROJECT_DIRECTORY}",
-        f"NTASKS={NTASKS}",
-        f"OMP_NUM_THREADS={OMP_NUM_THREADS}",
-    ]
+    jobs = []
+    for problem in problems:
+        entries = overrides.get(problem) or [{}]
+        for entry in entries if isinstance(entries, list) else [entries]:
+            bad = set(entry) - PLAN_KEYS
+            if bad:
+                raise ValueError(f"{problem}: unknown plan keys {', '.join(sorted(bad))}")
+            job = {**defaults, **entry, "problem": problem, "input_deck": f"in.{problem}"}
+            job["ntasks"] = job["nodes"] * job["ntasks_per_node"]
+            if isinstance(job["time"], int):  # YAML reads unquoted 12:00:00 as base-60 seconds
+                job["time"] = "{}:{:02d}:{:02d}".format(job["time"] // 3600, job["time"] // 60 % 60, job["time"] % 60)
+            jobs.append(job)
+    return jobs
 
-    cmd = [
-        "sbatch",
-        "--parsable",
+
+def select(jobs, patterns, max_time):
+    if patterns:
+        jobs = [job for job in jobs if any(fnmatch.fnmatch(job["problem"], p) for p in patterns)]
+    if max_time:
+        jobs = [job for job in jobs if hours(job["time"]) <= hours(max_time)]
+    return jobs
+
+
+def run_dir(job, root, stamp):
+    tag = f"{stamp}_{job['nodes']}n{job['ntasks_per_node']}p{job['omp_num_threads']}t"
+    return root / "runs" / job["build"] / job["problem"] / tag
+
+
+def sbatch_cmd(job, rundir, root):
+    lmp = root / job["build"] / "install" / "bin" / "lmp"
+    return [
+        "sbatch", "--parsable",
         "--account", ACCOUNT,
         "--partition", PARTITION,
-        "--job-name", problem,
-        "--nodes", str(NODES),
-        "--ntasks", str(NTASKS),
-        "--time", TIME,
-        "--export", ",".join(export_vars),
-        "--output", os.path.join(job_output_dir, f"{problem}-%j.out"),
-        "--error", os.path.join(job_output_dir, f"{problem}-%j.err")
+        "--job-name", job["problem"],
+        "--nodes", str(job["nodes"]),
+        "--ntasks-per-node", str(job["ntasks_per_node"]),
+        "--cpus-per-task", str(job["omp_num_threads"]),
+        "--time", job["time"],
+        "--chdir", str(rundir),
+        "--output", "slurm-%j.out",
+        "--error", "slurm-%j.err",
+        "--export", f"ALL,LMP={lmp},DECK={job['input_deck']}",
+        str(RUNNER),
     ]
 
-    cmd.append(RUNNER)
 
-    print("Submitting:")
-    print("    " + " ".join(cmd))
-
-    result = subprocess.run(
-        cmd,
-        stdout=subprocess.PIPE,
-        stderr=subprocess.PIPE,
-        universal_newlines=True,
-    )
-
-    if result.returncode != 0:
-        print("sbatch failed")
-        print("Return code:", result.returncode)
-        print("STDOUT:")
-        print(result.stdout)
-        print("STDERR:")
-        print(result.stderr)
-        raise RuntimeError("sbatch submission failed")
-
+def submit(cmd):
+    result = subprocess.run(cmd, stdout=subprocess.PIPE, stderr=subprocess.PIPE, universal_newlines=True)
     job_id = result.stdout.strip().split(";")[0]
-
-    if not job_id.isdigit():
-        raise RuntimeError(f"Could not parse job ID from sbatch output: {result.stdout}")
-
+    if result.returncode != 0 or not job_id.isdigit():
+        raise RuntimeError(f"sbatch failed ({result.returncode}): {result.stderr.strip() or result.stdout.strip()}")
     return int(job_id)
 
 
-def write_manifest(path, metrics, jobs):
-    manifest = {
-        "metrics": metrics,
-        "jobs": jobs,
-    }
-
-    os.makedirs(os.path.dirname(path), exist_ok=True)
-
-    with open(path, "w") as f:
-        yaml.safe_dump(manifest, f, sort_keys=False)
-
-    print(f"\nWrote manifest: {path}")
+def write_manifest(path, jobs):
+    path.parent.mkdir(parents=True, exist_ok=True)
+    path.write_text(yaml.safe_dump({"metrics": METRICS, "jobs": jobs}, sort_keys=False))
 
 
 def parse_args():
-    parser = argparse.ArgumentParser(
-        description="Submit LAMMPS jobs and write LDMS query YAML manifest."
-    )
-
-    parser.add_argument(
-        "--build", "-b",
-        default="cpu_mpi_omp",
-        help="LAMMPS build name.",
-    )
-
-    parser.add_argument(
-        "--problem", "-p",
-        action="append",
-        dest="problems",
-        help="Problem name to submit. Can be used multiple times. Default: all decks.",
-    )
-
+    parser = argparse.ArgumentParser(description="Submit LAMMPS jobs from the run plan and write a query manifest.")
+    parser.add_argument("-y", "--yes", action="store_true", help="Skip the confirmation prompt.")
+    parser.add_argument("-p", "--problem", action="append", help="Deck name or glob to submit (repeatable). Default: all.")
+    parser.add_argument("--max-time", help="Only submit jobs whose planned walltime is at most HH:MM:SS.")
+    parser.add_argument("--dry-run", action="store_true", help="Print the sbatch commands without submitting.")
+    parser.add_argument("--root", type=Path, default=ROOT, help=f"Scheduling root on the cluster (default: {ROOT}).")
     return parser.parse_args()
 
 
 def main():
     args = parse_args()
-    decks = find_decks(DECKS_DIR, args.problems)
+    problems = sorted(p.name[3:] for p in DECKS_DIR.glob("in.*"))
+    jobs = select(resolve_jobs(*load_plan(PLAN), problems), args.problem, args.max_time)
+    if not jobs:
+        sys.exit("No jobs match.")
 
-    if not decks:
-        raise RuntimeError(f"No decks found in {DECKS_DIR}")
+    for build in {job["build"] for job in jobs}:
+        lmp = args.root / build / "install" / "bin" / "lmp"
+        if not args.dry_run and not lmp.exists():
+            sys.exit(f"Missing LAMMPS binary: {lmp}")
 
-    confirmation = input(f"This will schedule {len(decks)} jobs with slurm. Continue? [y]/n: ")
-    if confirmation.strip().lower() in ["n", "no"]:
-        print("Exiting.")
-        sys.exit()
+    node_hours = sum(job["nodes"] * hours(job["time"]) for job in jobs)
+    prompt = f"You're about to submit {len(jobs)} jobs ({node_hours:.1f} node-hours requested). Continue? [y/N]: "
+    if not args.yes and input(prompt).strip().lower() not in ("y", "yes"):
+        sys.exit("Exiting.")
 
-    jobs = {}
+    stamp = dt.datetime.now().strftime("%Y%m%d-%H%M%S")
+    manifest = MANIFESTS_DIR / f"manifest_{stamp}.yaml"
+    submitted = {}
 
-    for deck in decks:
-        problem = problem_from_deck(deck)
-        job_id = submit_job(args, problem)
+    for job in jobs:
+        deck = DECKS_DIR / job["input_deck"]
+        rundir = run_dir(job, args.root, stamp)
+        cmd = sbatch_cmd(job, rundir, args.root)
+        if args.dry_run:
+            print(" ".join(cmd))
+            continue
 
-        jobs[job_id] = {
-            "build": args.build,
-            "problem": problem,
-            "input_deck": os.path.basename(deck),
-            "ntasks": NTASKS,
-            "nodes": NODES,
-            "omp_num_threads": OMP_NUM_THREADS,
-            "time": TIME,
-        }
+        rundir.mkdir(parents=True, exist_ok=True)
+        shutil.copy(deck, rundir)
+        job_id = submit(cmd)
+        submitted[job_id] = {**job, "deck_sha256": hashlib.sha256(deck.read_bytes()).hexdigest(),
+                             "run_dir": str(rundir), "submitted": dt.datetime.now().isoformat(timespec="seconds")}
+        # Rewrite after every job so a failure part-way through keeps the IDs already submitted.
+        write_manifest(manifest, submitted)
+        print(f"Submitted {job['problem']} ({job['nodes']}x{job['ntasks_per_node']}x{job['omp_num_threads']}): {job_id}")
 
-        print(f"Submitted {problem}: job_id={job_id}")
+    if submitted:
+        print(f"\nWrote manifest: {manifest}")
 
-    write_manifest(MANIFEST, METRICS, jobs)
 
 if __name__ == "__main__":
     main()
-

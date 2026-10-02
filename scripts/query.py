@@ -4,14 +4,12 @@
 
 import argparse
 import traceback
-from typing import Callable, Dict, Iterable, List, Optional, Tuple
-from dataclasses import dataclass
+from typing import Callable, Dict, Iterable, List, NamedTuple, Optional, Tuple
 from functools import partial
 from pathlib import Path
 
 import pandas as pd
 import yaml
-from sosdb import Sos
 
 BASE_DIR = Path(__file__).resolve().parents[1]
 LDMS_DATA_DIR = BASE_DIR / "data" / "ldms"
@@ -26,7 +24,8 @@ CHUNK_ROWS = 1024 * 1024
 
 SAMPLE_COLUMNS = ["timestamp", "job_id", "component_id", "metric", "unit", "value"]
 TIDY_COLUMNS = ["timestamp", "time_rel_s", *SAMPLE_COLUMNS[1:]]
-SUMMARY_COLUMNS = ["job_id", "build", "problem", "components", "rows", "out_csv", "status"]
+RESOURCE_COLUMNS = ["nodes", "ntasks", "ntasks_per_node", "omp_num_threads", "time", "deck_sha256"]
+SUMMARY_COLUMNS = ["job_id", "build", "problem", *RESOURCE_COLUMNS, "components", "rows", "out_csv", "status"]
 
 # Turns one component's time-ordered samples into the metric's value column.
 Deriver = Callable[[pd.DataFrame], pd.Series]
@@ -35,8 +34,7 @@ Deriver = Callable[[pd.DataFrame], pd.Series]
 QueryFn = Callable[[str], pd.DataFrame]
 
 
-@dataclass(frozen=True)
-class MetricSpec:
+class MetricSpec(NamedTuple):
     schema: str
     columns: Tuple[str, ...]
     derive: Deriver
@@ -170,6 +168,7 @@ def summarize(job_id: int, job_cfg: dict, tidy: pd.DataFrame, out_csv, status: s
         "job_id": job_id,
         "build": job_cfg.get("build", ""),
         "problem": job_cfg.get("problem", ""),
+        **{column: job_cfg.get(column, "") for column in RESOURCE_COLUMNS},
         "components": tidy["component_id"].nunique() if not tidy.empty else 0,
         "rows": len(tidy),
         "out_csv": str(out_csv),
@@ -177,13 +176,13 @@ def summarize(job_id: int, job_cfg: dict, tidy: pd.DataFrame, out_csv, status: s
     }
 
 
-def process_job(query: QueryFn, job_id: int, job_cfg: dict, metrics: List[str]) -> dict:
+def process_job(query: QueryFn, job_id: int, job_cfg: dict, metrics: List[str], data_dir: Path) -> dict:
     tidy = collect_job(query, job_id, metrics)
 
     if tidy.empty:
         return summarize(job_id, job_cfg, tidy, "", "no_data")
 
-    out_csv = LDMS_DATA_DIR / job_cfg["build"] / job_cfg["problem"] / str(job_id) / "ldms_metrics.csv"
+    out_csv = data_dir / job_cfg["build"] / job_cfg["problem"] / str(job_id) / "ldms_metrics.csv"
     out_csv.parent.mkdir(parents=True, exist_ok=True)
     tidy.to_csv(out_csv, index=False)
     print(f"Wrote {out_csv} ({len(tidy)} rows)")
@@ -203,6 +202,8 @@ def parse_args(argv: Optional[List[str]] = None) -> argparse.Namespace:
 
 
 def main(argv: Optional[List[str]] = None) -> None:
+    from sosdb import Sos  # only installed on the DSOS cluster
+
     args = parse_args(argv)
     metrics, jobs = load_manifest(args.manifest)
 
@@ -213,7 +214,7 @@ def main(argv: Optional[List[str]] = None) -> None:
     for job_id, job_cfg in jobs.items():
         print(f"\n=== job {job_id} ===")
         try:
-            summaries.append(process_job(query, job_id, job_cfg, metrics))
+            summaries.append(process_job(query, job_id, job_cfg, metrics, args.data_dir))
         except Exception as error:
             print(f"ERROR processing job {job_id}: {error}")
             traceback.print_exc()

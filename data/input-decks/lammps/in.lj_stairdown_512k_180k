@@ -1,0 +1,38 @@
+# in.lj_stairdown_512k_180k
+# LJ melt halved three times by random deletion (512k -> 64k atoms), 45k steps per stage.
+# Independent: descending CPU staircase while allocated memory stays high.
+
+units           lj
+atom_style      atomic
+boundary        p p p
+
+variable        temp equal 1.0
+variable        nstage equal 45000
+
+lattice         fcc 0.8442
+region          box block 0 64 0 40 0 50
+create_box      1 box
+create_atoms    1 box
+
+mass            1 1.0
+
+velocity        all create ${temp} 87287 loop geom
+
+pair_style      lj/cut 2.5
+pair_coeff      1 1 1.0 1.0 2.5
+
+neighbor        0.3 bin
+neigh_modify    delay 0 every 1 check yes
+
+fix             1 all nve
+
+thermo          500
+thermo_style    custom step atoms temp pe ke etotal press
+
+run             ${nstage}
+delete_atoms    random fraction 0.5 yes all NULL 1001
+run             ${nstage}
+delete_atoms    random fraction 0.5 yes all NULL 1002
+run             ${nstage}
+delete_atoms    random fraction 0.5 yes all NULL 1003
+run             ${nstage}

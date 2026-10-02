@@ -1,0 +1,37 @@
+# in.nemd2d_shear_144k_600k_rc25
+# 2d NEMD shear with cutoff 2.5.
+# Variant of nemd2d_shear_144k_600k: pair cutoff 4.0 -> 2.5 (expected impact: high).
+
+units           lj
+atom_style      atomic
+dimension       2
+
+variable        rc equal 2.5
+variable        erate equal 0.01
+variable        nsteps equal 600000
+
+lattice         sq2 0.8442
+region          box prism 0 300 0 240 -0.5 0.5 0 0 0
+create_box      2 box
+create_atoms    1 box
+mass            * 1.0
+
+velocity        all create 1.44 87287 loop geom
+
+region          slice block 140 160 INF INF INF INF
+set             region slice type 2
+
+pair_style      lj/cut ${rc}
+pair_coeff      * * 1.0 1.0
+
+neighbor        0.3 bin
+neigh_modify    delay 0 every 1
+
+fix             1 all nvt/sllod temp 1.0 1.0 1.0 tchain 1
+fix             2 all deform 1 xy erate ${erate} remap v flip yes
+fix             3 all enforce2d
+
+thermo          100
+thermo_style    custom step temp pe ke etotal press pxy
+
+run             ${nsteps}
