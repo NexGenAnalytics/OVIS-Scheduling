@@ -44,14 +44,18 @@ def load_simulations(path: Path) -> list[Simulation]:
       runprofile_str: str = path_profile.read_text(encoding="utf-8")
 
       inputdeck_content: list[Feature] = parse_inputdeck(inputdeck_str)
-      runprofile_content: list[Metric] = parse_runprofile(runprofile_str)
+      runprofile_content, total_time = parse_runprofile(runprofile_str)
 
       simulation = Simulation(
         id = int(job_id),
         inputdeck = inputdeck_content,
         runprofile = runprofile_content,
+        totaltime = int(total_time),
       )
       simulations.append(simulation)
+
+      totaltimeminutes = int(simulation.totaltime / 60)
+      print(f"Load {simulation.id}, exec. time of {totaltimeminutes} minutes")
 
   return simulations
 

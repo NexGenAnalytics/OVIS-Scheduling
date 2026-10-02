@@ -23,3 +23,4 @@ class Simulation:
   id: int
   inputdeck: list[Feature]
   runprofile: list[Metric]
+  totaltime: int # in seconds

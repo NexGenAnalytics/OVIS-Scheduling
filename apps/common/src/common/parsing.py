@@ -23,8 +23,9 @@ def parse_inputdeck(content: str) -> list[Feature]:
 
   return features
 
-def parse_runprofile(content: str) -> list[Metric]:
+def parse_runprofile(content: str) -> (list[Metric], float):
   metrics: list[Metric] = []
+  times = []
 
   reader = csv.DictReader(StringIO(content))
 
@@ -40,7 +41,9 @@ def parse_runprofile(content: str) -> list[Metric]:
         value=float(row["value"]),
       )
       metrics.append(metric)
+      times.append(metric.time_rel_s)
     except (TypeError, ValueError) as error:
       raise ValueError(f"Invalid {line_number}") from error
 
-  return metrics
+  total_time = max(times) if times else 0
+  return metrics, total_time
