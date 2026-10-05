@@ -7,15 +7,19 @@ import joblib
 import numpy as np
 from pathlib import Path
 from sklearn.compose import TransformedTargetRegressor
+from sklearn.metrics import (
+  mean_absolute_error, r2_score, root_mean_squared_error)
+from sklearn.model_selection import train_test_split
 from sklearn.neural_network import MLPRegressor
 from sklearn.pipeline import make_pipeline
 from sklearn.preprocessing import StandardScaler
 
+RANDOM_SEED = 42
+
 def init_parser() -> argparse.Namespace:
   parser = argparse.ArgumentParser(prog="modeling-training")
   parser.add_argument("--simu", type=Path, required=True)
-  parser.add_argument("--deta", type=int, required=True)
-  parser.add_argument("--feat", nargs="+", type=str, required=False)
+  # parser.add_argument("--feat", nargs="+", type=str, required=False)
   return parser.parse_args()
 
 def load_simulations(path: Path) -> list[Simulation]:
@@ -61,7 +65,8 @@ def load_simulations(path: Path) -> list[Simulation]:
 
 def create_model() -> TransformedTargetRegressor:
   mlp_regressor = MLPRegressor(
-    hidden_layer_sizes=(64, 32), solver="lbfgs", max_iter=2000, random_state=42
+    hidden_layer_sizes=(64, 32), solver="lbfgs", max_iter=2000,
+    random_state=RANDOM_SEED
   )
   model = TransformedTargetRegressor(
     regressor=make_pipeline(StandardScaler(), mlp_regressor),
@@ -69,67 +74,70 @@ def create_model() -> TransformedTargetRegressor:
   )
   return model
 
-def train_model(
+def prepare_dataset(
   simulations: list[Simulation],
-  details: int,
-  features: list[str] | None,
   metric: str
-) -> TransformedTargetRegressor:
-  # Pre-checks
-  if not simulations:
-    raise ValueError("No simulations available for training")
-
-  if details < 2:
-    raise ValueError("details must be at least 2")
-
+) -> (np.ndarray, np.ndarray):
   # X is the numeric description of each LAMMPS input deck.
   # X.shape == (number_of_simulations, number_of_input_features)
   X: list[list[float]] = []
 
   # y is the observed [column] (example: cpu_cores_used) profile corresponding
   # to that deck.
-  # y.shape == (number_of_simulations, details)
-  y: list[np.ndarray] = []
+  # y.shape == (number_of_simulations, 3)
+  y: list[list[float]] = []
 
   for simulation in simulations:
-    # Fixed-length description extracted from the input deck
-    inputdeck = simulation.inputdeck
+    # TODO: below, use features??
     deck_vector = [
-      find_variable(inputdeck, "nx"),
+      find_variable(simulation.inputdeck, "nx"),
       #find_variable(inputdeck, "rho"),
       #find_variable(inputdeck, "temp"),
       #find_variable(inputdeck, "rc"),
-      find_variable(inputdeck, "nsteps"),
+      find_variable(simulation.inputdeck, "nsteps"),
     ]
 
     # Only the requested metric
-    metrics = [
-      point
-      for point in simulation.runprofile
-      if point.metric == metric
+    values = np.asarray(
+      [
+        point.value
+        for point in simulation.runprofile
+        if point.metric == metric
+      ],
+      dtype=float
+    )
+
+    # Checks
+    if values.size == 0:
+      raise ValueError(
+        f"Simulation {simulation.id} has no values for metric {metric!r}"
+      )
+
+    if not np.all(np.isfinite(values)):
+      raise ValueError(
+        f"Simulation {simulation.id} contains invalid values for {metric!r}"
+      )
+
+    # Targets in y
+    target = [
+      float(np.max(values)),
+      float(np.mean(values)),
+      float(np.min(values)),
     ]
 
-    # Ensure chronological order
-    metrics.sort(key=lambda point: point.time_rel_s)
-
-    times = np.asarray([point.time_rel_s for point in metrics], dtype=float)
-    values = np.asarray([point.value for point in metrics], dtype=float)
-
-    # Exactly `details` positions for every simulation
-    requested_times = np.linspace(times[0], times[-1], details)
-
-    resampled_values = np.interp(requested_times, times, values)
-
     X.append(deck_vector)
-    y.append(resampled_values)
+    y.append(target)
 
-  X = np.asarray(X, dtype=float)
-  y = np.asarray(y, dtype=float)
+  return (np.asarray(X, dtype=float), np.asarray(y, dtype=float))
 
-  print("X shape:", X.shape)
-  print("y shape:", y.shape)
-  print("First X row:", X[0])
-  print("First y row:", y[0])
+def train_model(
+  simulations: list[Simulation],
+  metric: str
+) -> TransformedTargetRegressor:
+  if not simulations:
+    raise ValueError("No simulations available for training")
+
+  X, y = prepare_dataset(simulations, metric)
 
   model = create_model()
   model.fit(X, y)
@@ -143,21 +151,75 @@ def save_model(model: TransformedTargetRegressor, name: str) -> bool:
   filename = f"{name}_model.joblib"
   modelpath = directory / filename
   joblib.dump(model, modelpath)
-  print(f"Save {name} ok")
 
   return True
+
+def split_set(
+  simulations: list[Simulation]
+) -> (list[Simulation], list[Simulation], list[Simulation]):
+  """
+  Split in:
+  - train: 70%
+  - validation: 20%
+  - test: 10%
+  """
+  training_set, remaining_set = train_test_split(
+    simulations, train_size=0.7,
+    random_state=RANDOM_SEED, shuffle=True,
+  )
+  validation_set, testing_set = train_test_split(
+    remaining_set, train_size=2/3,
+    random_state=RANDOM_SEED, shuffle=True,
+  )
+  return training_set, validation_set, testing_set
+
+def evaluate_model(
+  model: TransformedTargetRegressor,
+  simulations: list[Simulation],
+  metric: str
+) -> (str, float):
+  X, expected = prepare_dataset(simulations, metric)
+  predicted = model.predict(X)
+
+  # Mean Absolute Error
+  mae = mean_absolute_error(expected, predicted)
+
+  # Root Mean Squared Error
+  rmse = root_mean_squared_error(expected, predicted)
+
+  # Coefficient of determination
+  # Closer to 1 is better; 0 means approx. no better than predicting the mean.
+  #r2 = r2_score(expected, predicted, multioutput="variance_weighted")
+
+  return {"mae": float(mae), "rmse": float(rmse)} #, "r2": float(r2)}
 
 def main() -> None:
   args: argparse.Namespace = init_parser()
 
+  print(f"-------------------- LOAD SIMULATIONS --------------------")
   simulations: list[Simulation] = load_simulations(args.simu)
 
-  cpu_model: TransformedTargetRegressor = train_model(
-    simulations, args.deta, args.feat, "cpu_cores_used"
-  )
-  saved = save_model(cpu_model, "cpu")
+  # split
+  training_set, validation_set, testing_set = split_set(simulations)
 
-  mem_model: TransformedTargetRegressor = train_model(
-    simulations, args.deta, args.feat, "mem_active_kb"
-  )
-  saved = save_model(mem_model, "mem")
+  METRICS = { "cpu": "cpu_cores_used", "memory": "mem_active_kb" }
+  for resource, metric in METRICS.items():
+    print(f"-------------------- RESOURCE: {resource} --------------------")
+    print("Model development:")
+
+    cpu_model: TransformedTargetRegressor = train_model(training_set, metric)
+    print("- train OK")
+
+    valid_scores = evaluate_model(cpu_model, validation_set, metric)
+    print("- validation:", valid_scores)
+
+    # Adjust architecture/hyperparameters using validation results only.
+    # Once all model choices are final, evaluate the test set exactly once.
+
+    print("Model evaluation:")
+    test_scores = evaluate_model(cpu_model, testing_set, metric)
+    print("- test:", test_scores)
+
+    print("Save model:")
+    saved = save_model(cpu_model, resource)
+    print("- OK")

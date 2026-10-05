@@ -14,10 +14,13 @@ source .venv/bin/activate # for Linux and Mac
 ## How to use
 
 ```bash
-(.venv) modeling-training --simu {path} --deta {int} --feat {list}
+(.venv) modeling-training --simu {path}
 # simu (simulations): path to the folder with input decks and run profiles
-# deta (details): result integer because ML models needs fixed-size targets (min. 3)
-# feat (features): optional, strings/variables that are impactfull on cpu and memory usage
+
+# Idea:
+# feat (features): optional, strings/variables that are impactfull on cpu and
+# memory usage
+# # --feat {list}
 
 (.venv) modeling-prediction --model {path} --input {path}
 # model: path to load model
@@ -33,12 +36,10 @@ source .venv/bin/activate # for Linux and Mac
 # Examples
 
 ```bash
-(.venv) modeling-training --simu data/ --deta 5
+(.venv) modeling-training --simu data/
 
-(.venv) modeling-training \
-  --simu data/ \
-  --deta 50 \
-  --feat "variable nsteps"
+(.venv) modeling-training --simu data/
+# [--feat "variable nsteps" ?????????!!!!!]
 
 (.venv) modeling-prediction \
   --model output/models/cpu_model.joblib \

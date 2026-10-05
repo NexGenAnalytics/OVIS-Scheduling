@@ -16,10 +16,12 @@ def main() -> None:
   args: argparse.Namespace = init_parser()
 
   model = joblib.load(args.model)
+  print(f"Model: {args.model}")
 
   content = Path(args.input).read_text(encoding="utf-8")
   inputdeck = parse_inputdeck(content)
 
+  # TODO: should be common?
   deck_vector = [
     find_variable(inputdeck, "nx"),
     #find_variable(inputdeck, "rho"),
@@ -30,6 +32,8 @@ def main() -> None:
 
   X_new = np.asarray([deck_vector], dtype=float)
 
-  predicted_cpu = model.predict(X_new)[0]
-  print(args.model)
-  print(predicted_cpu)
+  predicted_values = model.predict(X_new)[0]
+
+  TARGET_NAMES = ("max", "mean", "min")
+  cpu_prediction = dict(zip(TARGET_NAMES, predicted_values))
+  print(cpu_prediction)
