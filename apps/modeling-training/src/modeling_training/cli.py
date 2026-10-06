@@ -1,20 +1,20 @@
 import argparse
+from .benchmark import (display_benchmark, run_benchmark, select_best_model)
 from common import (Feature, Metric, Simulation)
 from common import (parse_inputdeck, parse_runprofile)
-from common import find_variable
+from .dataset import prepare_dataset
 import csv
 import joblib
+from .models import RANDOM_SEED
 import numpy as np
 from pathlib import Path
 from sklearn.compose import TransformedTargetRegressor
-from sklearn.metrics import (
-  mean_absolute_error, r2_score, root_mean_squared_error)
 from sklearn.model_selection import train_test_split
-from sklearn.neural_network import MLPRegressor
-from sklearn.pipeline import make_pipeline
-from sklearn.preprocessing import StandardScaler
 
-RANDOM_SEED = 42
+RESOURCE_METRICS = {
+  "cpu": "cpu_cores_used",
+  "memory": "mem_active_kb",
+}
 
 def init_parser() -> argparse.Namespace:
   parser = argparse.ArgumentParser(prog="modeling-training")
@@ -63,100 +63,11 @@ def load_simulations(path: Path) -> list[Simulation]:
 
   return simulations
 
-def create_model() -> TransformedTargetRegressor:
-  mlp_regressor = MLPRegressor(
-    hidden_layer_sizes=(64, 32), solver="lbfgs", max_iter=2000,
-    random_state=RANDOM_SEED
-  )
-  model = TransformedTargetRegressor(
-    regressor=make_pipeline(StandardScaler(), mlp_regressor),
-    transformer=StandardScaler(),
-  )
-  return model
-
-def prepare_dataset(
-  simulations: list[Simulation],
-  metric: str
-) -> (np.ndarray, np.ndarray):
-  # X is the numeric description of each LAMMPS input deck.
-  # X.shape == (number_of_simulations, number_of_input_features)
-  X: list[list[float]] = []
-
-  # y is the observed [column] (example: cpu_cores_used) profile corresponding
-  # to that deck.
-  # y.shape == (number_of_simulations, 3)
-  y: list[list[float]] = []
-
-  for simulation in simulations:
-    # TODO: below, use features??
-    deck_vector = [
-      find_variable(simulation.inputdeck, "nx"),
-      #find_variable(inputdeck, "rho"),
-      #find_variable(inputdeck, "temp"),
-      #find_variable(inputdeck, "rc"),
-      find_variable(simulation.inputdeck, "nsteps"),
-    ]
-
-    # Only the requested metric
-    values = np.asarray(
-      [
-        point.value
-        for point in simulation.runprofile
-        if point.metric == metric
-      ],
-      dtype=float
-    )
-
-    # Checks
-    if values.size == 0:
-      raise ValueError(
-        f"Simulation {simulation.id} has no values for metric {metric!r}"
-      )
-
-    if not np.all(np.isfinite(values)):
-      raise ValueError(
-        f"Simulation {simulation.id} contains invalid values for {metric!r}"
-      )
-
-    # Targets in y
-    target = [
-      float(np.max(values)),
-      float(np.mean(values)),
-      float(np.min(values)),
-    ]
-
-    X.append(deck_vector)
-    y.append(target)
-
-  return (np.asarray(X, dtype=float), np.asarray(y, dtype=float))
-
-def train_model(
-  simulations: list[Simulation],
-  metric: str
-) -> TransformedTargetRegressor:
-  if not simulations:
-    raise ValueError("No simulations available for training")
-
-  X, y = prepare_dataset(simulations, metric)
-
-  model = create_model()
-  model.fit(X, y)
-
-  return model
-
-def save_model(model: TransformedTargetRegressor, name: str) -> bool:
-  directory = Path("output/models")
-  directory.mkdir(parents=True, exist_ok=True)
-
-  filename = f"{name}_model.joblib"
-  modelpath = directory / filename
-  joblib.dump(model, modelpath)
-
-  return True
-
-def split_set(
-  simulations: list[Simulation]
-) -> (list[Simulation], list[Simulation], list[Simulation]):
+def split_set(simulations: list[Simulation]) -> tuple[
+  list[Simulation],
+  list[Simulation],
+  list[Simulation]
+]:
   """
   Split in:
   - train: 70%
@@ -173,53 +84,42 @@ def split_set(
   )
   return training_set, validation_set, testing_set
 
-def evaluate_model(
-  model: TransformedTargetRegressor,
-  simulations: list[Simulation],
-  metric: str
-) -> (str, float):
-  X, expected = prepare_dataset(simulations, metric)
-  predicted = model.predict(X)
+def save_model(model: any, name: str) -> Path:
+  directory = Path("output/models")
+  directory.mkdir(parents=True, exist_ok=True)
 
-  # Mean Absolute Error
-  mae = mean_absolute_error(expected, predicted)
+  model_path = directory / f"{name}_model.joblib"
+  joblib.dump(model, model_path)
 
-  # Root Mean Squared Error
-  rmse = root_mean_squared_error(expected, predicted)
-
-  # Coefficient of determination
-  # Closer to 1 is better; 0 means approx. no better than predicting the mean.
-  #r2 = r2_score(expected, predicted, multioutput="variance_weighted")
-
-  return {"mae": float(mae), "rmse": float(rmse)} #, "r2": float(r2)}
+  return model_path
 
 def main() -> None:
   args: argparse.Namespace = init_parser()
-
-  print(f"-------------------- LOAD SIMULATIONS --------------------")
   simulations: list[Simulation] = load_simulations(args.simu)
 
-  # split
   training_set, validation_set, testing_set = split_set(simulations)
 
-  METRICS = { "cpu": "cpu_cores_used", "memory": "mem_active_kb" }
-  for resource, metric in METRICS.items():
-    print(f"-------------------- RESOURCE: {resource} --------------------")
-    print("Model development:")
+  for resource, metric in RESOURCE_METRICS.items():
+    print(f"\n---------------- RESOURCE: {resource} ----------------")
 
-    cpu_model: TransformedTargetRegressor = train_model(training_set, metric)
-    print("- train OK")
+    X_train, y_train = prepare_dataset(training_set, metric)
+    X_validation, y_validation = prepare_dataset(
+      validation_set,
+      metric,
+    )
 
-    valid_scores = evaluate_model(cpu_model, validation_set, metric)
-    print("- validation:", valid_scores)
+    benchmark_results = run_benchmark(
+      X_train,
+      y_train,
+      X_validation,
+      y_validation,
+    )
 
-    # Adjust architecture/hyperparameters using validation results only.
-    # Once all model choices are final, evaluate the test set exactly once.
+    display_benchmark(benchmark_results)
 
-    print("Model evaluation:")
-    test_scores = evaluate_model(cpu_model, testing_set, metric)
-    print("- test:", test_scores)
+    best_result = select_best_model(benchmark_results, target="mean")
+    print(f"Selected model: {best_result.name}")
 
-    print("Save model:")
-    saved = save_model(cpu_model, resource)
-    print("- OK")
+    model_path = save_model(best_result.model, resource)
+    print(f"Saved {best_result.name} to {model_path}")
+

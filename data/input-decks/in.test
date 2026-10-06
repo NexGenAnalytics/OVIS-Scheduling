@@ -1,0 +1,6 @@
+# in.test
+
+variable        nx equal 2
+variable        nsteps equal 150
+
+run             ${nsteps}
