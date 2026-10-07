@@ -1,6 +1,9 @@
 # in.test
 
-variable        nx equal 2
-variable        nsteps equal 150
+variable        nx equal 1
+variable        rho equal 0.1
+variable        temp equal 1.0
+variable        rc equal 1.0
+variable        nsteps equal 10
 
 run             ${nsteps}

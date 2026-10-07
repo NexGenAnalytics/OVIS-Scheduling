@@ -1,7 +1,5 @@
 import argparse
-from common import Feature
-from common import parse_inputdeck
-from common import find_variable
+from common import define_deck_vector, Feature, parse_inputdeck
 import joblib
 import numpy as np
 from pathlib import Path
@@ -20,15 +18,7 @@ def main() -> None:
 
   content = Path(args.input).read_text(encoding="utf-8")
   inputdeck = parse_inputdeck(content)
-
-  # TODO: should be common?
-  deck_vector = [
-    find_variable(inputdeck, "nx"),
-    #find_variable(inputdeck, "rho"),
-    #find_variable(inputdeck, "temp"),
-    #find_variable(inputdeck, "rc"),
-    find_variable(inputdeck, "nsteps"),
-  ]
+  deck_vector = define_deck_vector(inputdeck)
 
   X_new = np.asarray([deck_vector], dtype=float)
 

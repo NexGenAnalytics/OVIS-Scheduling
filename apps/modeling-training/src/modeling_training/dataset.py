@@ -1,5 +1,5 @@
 import numpy as np
-from common import Simulation, find_variable
+from common import Simulation, define_deck_vector
 
 def prepare_dataset(
   simulations: list[Simulation],
@@ -9,14 +9,7 @@ def prepare_dataset(
   y: list[list[float]] = [] # (number_of_simulations, number_of_target)
 
   for simulation in simulations:
-    deck_vector = [
-      # find_atom_style(simulation.inputdeck) # TODO
-      find_variable(simulation.inputdeck, "nx"),
-      find_variable(simulation.inputdeck, "rho"),
-      find_variable(simulation.inputdeck, "temp"),
-      find_variable(simulation.inputdeck, "rc"),
-      find_variable(simulation.inputdeck, "nsteps"),
-    ]
+    deck_vector = define_deck_vector(simulation.inputdeck)
 
     values = np.asarray(
       [
