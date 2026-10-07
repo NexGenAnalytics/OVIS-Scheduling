@@ -14,7 +14,7 @@ import yaml
 BASE_DIR = Path(__file__).resolve().parents[1]
 LDMS_DATA_DIR = BASE_DIR / "data" / "ldms"
 
-SOS_CONFIG = "/opt/ovis/dsos/config/manzano.conf"
+SOS_CONFIG = "/opt/ovis/dsos/config/all.conf"
 SOS_DATABASE = "/storage/manzano/sos/database"
 
 MEM_SCHEMA = "meminfo_toss4"
