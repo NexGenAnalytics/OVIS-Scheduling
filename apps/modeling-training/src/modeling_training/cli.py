@@ -25,7 +25,7 @@ def init_parser() -> argparse.Namespace:
 def load_simulations(path: Path) -> list[Simulation]:
   simulations: list[Simulation] = []
 
-  path_manifest = path / "ldms" / "ldms_manifest_20260921.csv"
+  path_manifest = path / "ldms" / "ldms_manifest_20261006-084316.csv"
   path_inputdecks = path / "input-decks" / "lammps"
   path_profiles = path / "ldms" / "cpu_mpi_omp"
 

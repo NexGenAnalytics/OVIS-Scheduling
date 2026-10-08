@@ -1,0 +1,40 @@
+# in.rigid_cubes_131k_160k_noexclude
+# Rigid LJ cubes without intra-body neighbor exclusion.
+# Variant of rigid_cubes_131k_160k: removes neigh_modify exclude custom/match (expected impact: moderate).
+# Requires: RIGID
+
+units           lj
+atom_style      bond
+atom_modify     map array
+boundary        p p p
+
+variable        nsteps equal 160000
+
+lattice         sc 1.0
+region          box block 0 64 0 64 0 64
+create_box      1 box
+create_atoms    1 box
+
+variable        odd atom "(floor(x/2)+floor(y/2)+floor(z/2)) % 2"
+group           odd variable odd
+delete_atoms    group odd
+
+variable        bid atom 1+floor(x/2)+32*floor(y/2)+1024*floor(z/2)
+set             group all mol v_bid
+
+mass            1 1.0
+
+pair_style      lj/cut 2.5
+pair_coeff      1 1 1.0 1.0 2.5
+
+neighbor        0.3 bin
+neigh_modify    delay 0 every 1 check yes
+
+velocity        all create 1.5 33121 loop geom
+
+fix             1 all rigid/small molecule
+
+thermo          100
+thermo_style    custom step temp pe ke etotal press
+
+run             ${nsteps}

@@ -1,0 +1,44 @@
+# in.lj_softpush_256k_170k
+# 256k atoms from random coordinates: soft push-off (ramped soft potential) then LJ with Langevin.
+# Independent: two-phase protocol with a pair-style switch. Final state matches lj_base_256k_160k_langevin.
+
+units           lj
+atom_style      atomic
+boundary        p p p
+
+variable        npush equal 10000
+variable        nsteps equal 160000
+
+lattice         fcc 0.8442
+region          box block 0 40 0 40 0 40
+create_box      1 box
+create_atoms    1 random 256000 482911 box
+
+mass            1 1.0
+
+velocity        all create 1.0 87287 loop geom
+
+pair_style      soft 1.122462
+pair_coeff      1 1 0.0
+variable        prefactor equal ramp(0,60)
+
+neighbor        0.3 bin
+neigh_modify    delay 0 every 1 check yes
+
+fix             1 all nve/limit 0.1
+fix             2 all adapt 1 pair soft a * * v_prefactor
+fix             3 all langevin 1.0 1.0 0.5 1777
+
+thermo          100
+thermo_style    custom step temp pe ke etotal press
+
+run             ${npush}
+unfix           1
+unfix           2
+unfix           3
+
+pair_style      lj/cut 2.5
+pair_coeff      1 1 1.0 1.0 2.5
+fix             1 all nve
+fix             2 all langevin 1.0 1.0 0.5 1778
+run             ${nsteps}

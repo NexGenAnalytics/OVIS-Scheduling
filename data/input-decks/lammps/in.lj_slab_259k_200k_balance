@@ -1,0 +1,35 @@
+# in.lj_slab_259k_200k_balance
+# LJ liquid slab with static and dynamic z load balancing.
+# Variant of lj_slab_259k_200k: adds balance + fix balance along z (expected impact: moderate).
+
+units           lj
+atom_style      atomic
+boundary        p p p
+
+variable        temp equal 0.8
+variable        nsteps equal 200000
+
+lattice         fcc 0.8442
+region          box block 0 40 0 40 0 120
+region          liquid block 0 40 0 40 40 80
+create_box      1 box
+create_atoms    1 region liquid
+
+mass            1 1.0
+
+velocity        all create ${temp} 87287 loop geom
+
+pair_style      lj/cut 2.5
+pair_coeff      1 1 1.0 1.0 2.5
+
+neighbor        0.3 bin
+neigh_modify    delay 0 every 1 check yes
+
+balance         1.0 shift z 20 1.0
+fix             1 all nvt temp ${temp} ${temp} 0.5
+fix             2 all balance 1000 1.05 shift z 20 1.0
+
+thermo          100
+thermo_style    custom step temp pe ke etotal press
+
+run             ${nsteps}
