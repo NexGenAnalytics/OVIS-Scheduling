@@ -24,8 +24,12 @@ CHUNK_ROWS = 1024 * 1024
 
 SAMPLE_COLUMNS = ["timestamp", "job_id", "component_id", "metric", "unit", "value"]
 TIDY_COLUMNS = ["timestamp", "time_rel_s", *SAMPLE_COLUMNS[1:]]
-RESOURCE_COLUMNS = ["nodes", "ntasks", "ntasks_per_node", "omp_num_threads", "time", "deck_sha256"]
-SUMMARY_COLUMNS = ["job_id", "build", "problem", *RESOURCE_COLUMNS, "components", "rows", "out_csv", "status"]
+RESOURCE_COLUMNS = [
+    "nodes", "ntasks", "ntasks_per_node", "omp_num_threads", "time", "deck_sha256",
+    "particle_count", "particle_count_final",
+]
+MANIFEST_COLUMNS = ["build", "problem", *RESOURCE_COLUMNS]
+SUMMARY_COLUMNS = ["job_id", *MANIFEST_COLUMNS, "components", "rows", "out_csv", "status"]
 
 # Turns one component's time-ordered samples into the metric's value column.
 Deriver = Callable[[pd.DataFrame], pd.Series]
@@ -163,12 +167,26 @@ def collect_job(query: QueryFn, job_id: int, metrics: Iterable[str]) -> pd.DataF
     return tidy[TIDY_COLUMNS]
 
 
+def manifest_fields(job_cfg: dict) -> dict:
+    return {column: job_cfg.get(column, "") for column in MANIFEST_COLUMNS}
+
+
+def refresh_summary(summary: pd.DataFrame, jobs: Dict[int, dict]) -> pd.DataFrame:
+    """Re-copy manifest fields (such as newly recorded particle counts) into an existing summary."""
+    fields = pd.DataFrame([{"job_id": job_id, **manifest_fields(cfg)} for job_id, cfg in jobs.items()])
+    kept = summary.drop(columns=[column for column in MANIFEST_COLUMNS if column in summary])
+    return kept.merge(fields, on="job_id", how="left")[SUMMARY_COLUMNS]
+
+
+def summary_path(data_dir: Path, manifest: Path) -> Path:
+    stamp = manifest.stem[len("manifest_"):] if manifest.stem.startswith("manifest_") else manifest.stem
+    return data_dir / f"summary_{stamp}.csv"
+
+
 def summarize(job_id: int, job_cfg: dict, tidy: pd.DataFrame, out_csv, status: str) -> dict:
     return {
         "job_id": job_id,
-        "build": job_cfg.get("build", ""),
-        "problem": job_cfg.get("problem", ""),
-        **{column: job_cfg.get(column, "") for column in RESOURCE_COLUMNS},
+        **manifest_fields(job_cfg),
         "components": tidy["component_id"].nunique() if not tidy.empty else 0,
         "rows": len(tidy),
         "out_csv": str(out_csv),
@@ -198,14 +216,24 @@ def parse_args(argv: Optional[List[str]] = None) -> argparse.Namespace:
     parser.add_argument("--data-dir", type=Path, default=LDMS_DATA_DIR)
     parser.add_argument("--sos-config", default=SOS_CONFIG)
     parser.add_argument("--sos-database", default=SOS_DATABASE)
+    parser.add_argument(
+        "--refresh-summary", action="store_true",
+        help="Update an existing summary CSV's manifest columns without querying DSOS.",
+    )
     return parser.parse_args(argv)
 
 
 def main(argv: Optional[List[str]] = None) -> None:
-    from sosdb import Sos  # only installed on the DSOS cluster
-
     args = parse_args(argv)
     metrics, jobs = load_manifest(args.manifest)
+    summary_csv = summary_path(args.data_dir, args.manifest)
+
+    if args.refresh_summary:
+        refresh_summary(pd.read_csv(summary_csv), jobs).to_csv(summary_csv, index=False)
+        print(f"Refreshed summary: {summary_csv}")
+        return
+
+    from sosdb import Sos  # only installed on the DSOS cluster
 
     cont = Sos.Session(args.sos_config).open(args.sos_database)
     query = partial(run_query, cont)
@@ -221,7 +249,6 @@ def main(argv: Optional[List[str]] = None) -> None:
             summaries.append(summarize(job_id, job_cfg, pd.DataFrame(), "", "failed"))
 
     args.data_dir.mkdir(parents=True, exist_ok=True)
-    summary_csv = args.data_dir / f"ldms_{args.manifest.stem}.csv"
     summary_df = pd.DataFrame(summaries, columns=SUMMARY_COLUMNS)
     summary_df.to_csv(summary_csv, index=False)
 

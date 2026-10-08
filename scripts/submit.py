@@ -22,6 +22,7 @@ DECKS_DIR = REPO / "data" / "input-decks" / "lammps"
 PLAN = DECKS_DIR / "plan.yaml"
 MANIFESTS_DIR = REPO / "data" / "manifests"
 RUNNER = REPO / "scripts" / "run.sh"
+RECORDER = REPO / "scripts" / "record_particles.py"
 ROOT = Path("/gpfs/cwschil/Scheduling")
 
 PLAN_KEYS = {"build", "nodes", "ntasks_per_node", "omp_num_threads", "time"}
@@ -98,9 +99,26 @@ def submit(cmd):
     return int(job_id)
 
 
-def write_manifest(path, jobs):
+def collector_cmd(manifest, job_ids, root):
+    """Job that records particle counts into the manifest once every run has ended."""
+    return [
+        "sbatch", "--parsable",
+        "--account", ACCOUNT,
+        "--partition", PARTITION,
+        "--job-name", "record_particles",
+        "--nodes", "1",
+        "--ntasks", "1",
+        "--time", "00:15:00",
+        "--dependency", "afterany:" + ":".join(str(job_id) for job_id in job_ids),
+        "--chdir", str(root / "runs"),
+        "--output", "record_particles-%j.out",
+        "--wrap", f"{sys.executable} {RECORDER} {manifest}",
+    ]
+
+
+def write_manifest(path, jobs, metrics=METRICS):
     path.parent.mkdir(parents=True, exist_ok=True)
-    path.write_text(yaml.safe_dump({"metrics": METRICS, "jobs": jobs}, sort_keys=False))
+    path.write_text(yaml.safe_dump({"metrics": metrics, "jobs": jobs}, sort_keys=False))
 
 
 def parse_args():
@@ -140,6 +158,7 @@ def main():
         cmd = sbatch_cmd(job, rundir, args.root)
         if args.dry_run:
             print(" ".join(cmd))
+            submitted[len(submitted)] = job  # placeholder IDs so the collector command can be shown
             continue
 
         rundir.mkdir(parents=True, exist_ok=True)
@@ -151,8 +170,14 @@ def main():
         write_manifest(manifest, submitted)
         print(f"Submitted {job['problem']} ({job['nodes']}x{job['ntasks_per_node']}x{job['omp_num_threads']}): {job_id}")
 
-    if submitted:
-        print(f"\nWrote manifest: {manifest}")
+    if not submitted:
+        return
+    collector = collector_cmd(manifest, submitted, args.root)
+    if args.dry_run:
+        print(" ".join(collector))
+        return
+    print(f"\nWrote manifest: {manifest}")
+    print(f"Submitted particle-count recorder: {submit(collector)}. Commit the manifest after it completes.")
 
 
 if __name__ == "__main__":
