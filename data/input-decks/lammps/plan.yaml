@@ -1,0 +1,195 @@
+# Source of truth for how each LAMMPS deck in this directory is run by scripts/submit.py.
+# Decks not listed use `defaults`. A list of entries submits one job per entry (scaling sweeps).
+# Keys: build, nodes, ntasks_per_node, omp_num_threads, time (Slurm walltime, ~1.5x the expected runtime).
+defaults:
+  build: cpu_mpi_omp
+  nodes: 1
+  ntasks_per_node: 48
+  omp_num_threads: 1
+  time: "01:00:00"
+decks:
+  coul_pppm_062k_020k_ewald: {ntasks_per_node: 16, time: "04:00:00"}
+  coul_pppm_062k_040k_acc1e6: {ntasks_per_node: 16, time: "04:00:00"}
+  coul_pppm_062k_080k:
+    - {ntasks_per_node: 16, time: "01:30:00"}
+    - {ntasks_per_node: 16, nodes: 2, time: "01:30:00"}
+    - {ntasks_per_node: 16, nodes: 4, time: "01:00:00"}
+    - {ntasks_per_node: 12, omp_num_threads: 4, time: "01:00:00"}
+  coul_pppm_062k_080k_acc1e3: {ntasks_per_node: 16, time: "01:30:00"}
+  coul_pppm_062k_080k_acc1e5: {ntasks_per_node: 16, time: "02:30:00"}
+  coul_pppm_062k_080k_coulcut: {ntasks_per_node: 16, time: "01:30:00"}
+  coul_pppm_062k_080k_debye: {ntasks_per_node: 16, time: "02:00:00"}
+  coul_pppm_062k_080k_dsf: {ntasks_per_node: 16, time: "02:30:00"}
+  coul_pppm_062k_080k_nx32: {ntasks_per_node: 16, time: "03:30:00"}
+  coul_pppm_062k_080k_order4: {ntasks_per_node: 16, time: "02:00:00"}
+  coul_pppm_062k_080k_order7: {ntasks_per_node: 16, time: "01:30:00"}
+  coul_pppm_062k_080k_pppmcg: {ntasks_per_node: 16, time: "01:30:00"}
+  coul_pppm_062k_080k_pppmdisp: {ntasks_per_node: 16, time: "02:00:00"}
+  coul_pppm_062k_080k_q05: {ntasks_per_node: 16, time: "02:00:00"}
+  coul_pppm_062k_080k_rc40: {ntasks_per_node: 16, time: "01:30:00"}
+  coul_pppm_062k_080k_rc80: {ntasks_per_node: 16, time: "03:00:00"}
+  coul_pppm_062k_080k_seed: {ntasks_per_node: 16, time: "01:30:00"}
+  coul_pppm_1000k_040k: {nodes: 4, time: "01:30:00"}
+  deposit_lj_119k_060k: {ntasks_per_node: 16, time: "01:00:00"}
+  deposit_lj_144k_060k: {ntasks_per_node: 16, time: "01:00:00"}
+  deposit_lj_144k_060k_cold: {ntasks_per_node: 16, time: "01:00:00"}
+  deposit_lj_574k_220k: {time: "02:30:00"}
+  gran_pour_060k_200k: {ntasks_per_node: 16, time: "00:30:00"}
+  gran_pour_120k_200k: {ntasks_per_node: 16, time: "00:30:00"}
+  gran_pour_120k_200k_hertz: {ntasks_per_node: 16, time: "00:30:00"}
+  gran_pour_120k_200k_poly: {ntasks_per_node: 16, time: "00:30:00"}
+  gran_pour_480k_200k: {nodes: 2, time: "01:00:00"}
+  hybrid_ljmorse_256k_300k: {time: "01:00:00"}
+  ka_glass_2048k_400k: {nodes: 2, time: "05:00:00"}
+  ka_glass_256k_240k:
+    - {time: "01:00:00"}
+    - {ntasks_per_node: 16, time: "02:00:00"}
+    - {nodes: 2, time: "00:30:00"}
+    - {nodes: 4, time: "00:30:00"}
+    - {ntasks_per_node: 12, omp_num_threads: 4, time: "01:00:00"}
+  ka_glass_256k_240k_hot: {time: "01:00:00"}
+  ka_glass_256k_240k_quench: {time: "01:00:00"}
+  ka_glass_256k_240k_x50: {time: "01:00:00"}
+  kg_chain010_202k_360k: {time: "00:30:00"}
+  kg_chain025_202k_360k: {time: "00:30:00"}
+  kg_chain050_202k_360k:
+    - {time: "00:30:00"}
+    - {ntasks_per_node: 16, time: "01:00:00"}
+    - {nodes: 2, time: "00:30:00"}
+    - {nodes: 4, time: "00:30:00"}
+    - {ntasks_per_node: 12, omp_num_threads: 4, time: "00:30:00"}
+  kg_chain050_202k_360k_harmonic: {time: "00:30:00"}
+  kg_chain050_202k_360k_lj25: {time: "01:30:00"}
+  kg_chain050_202k_360k_nve: {time: "00:30:00"}
+  kg_chain050_410k_360k: {time: "01:00:00"}
+  kg_chain100_202k_360k: {time: "00:30:00"}
+  kg_chain100_3240k_400k: {nodes: 2, time: "03:30:00"}
+  kg_chain200_205k_360k: {time: "00:30:00"}
+  kg_polyampholyte_090k_120k: {time: "01:30:00"}
+  lj2d_hex_15995k_200k: {nodes: 2, time: "05:00:00"}
+  lj2d_hex_500k_240k: {time: "00:30:00"}
+  lj2d_hex_500k_240k_langevin: {time: "00:30:00"}
+  lj2d_hex_500k_240k_rc40: {time: "00:30:00"}
+  lj2d_hex_980k_240k: {time: "01:00:00"}
+  lj_base_256k_080k: {time: "00:30:00"}
+  lj_base_256k_160k:
+    - {time: "00:30:00"}
+    - {ntasks_per_node: 16, time: "01:00:00"}
+    - {nodes: 2, time: "00:30:00"}
+    - {nodes: 4, time: "00:30:00"}
+    - {ntasks_per_node: 12, omp_num_threads: 4, time: "00:30:00"}
+  lj_base_256k_160k_bcc: {time: "00:30:00"}
+  lj_base_256k_160k_berendsen: {time: "00:30:00"}
+  lj_base_256k_160k_binsize: {time: "00:30:00"}
+  lj_base_256k_160k_commcut: {time: "00:30:00"}
+  lj_base_256k_160k_delay5: {time: "00:30:00"}
+  lj_base_256k_160k_dt0025: {time: "00:30:00"}
+  lj_base_256k_160k_dt0075: {time: "00:30:00"}
+  lj_base_256k_160k_dump: {time: "00:30:00"}
+  lj_base_256k_160k_eps05: {time: "00:30:00"}
+  lj_base_256k_160k_every10: {time: "00:30:00"}
+  lj_base_256k_160k_expand: {time: "00:30:00"}
+  lj_base_256k_160k_gromacs: {time: "00:30:00"}
+  lj_base_256k_160k_langevin: {time: "00:30:00"}
+  lj_base_256k_160k_lj96: {time: "00:30:00"}
+  lj_base_256k_160k_loopall: {time: "00:30:00"}
+  lj_base_256k_160k_maphash: {time: "00:30:00"}
+  lj_base_256k_160k_mass2: {time: "00:30:00"}
+  lj_base_256k_160k_metal: {time: "00:30:00"}
+  lj_base_256k_160k_mie126: {time: "01:00:00"}
+  lj_base_256k_160k_mie147: {time: "01:00:00"}
+  lj_base_256k_160k_momentum: {time: "00:30:00"}
+  lj_base_256k_160k_morse: {time: "01:00:00"}
+  lj_base_256k_160k_msd: {time: "00:30:00"}
+  lj_base_256k_160k_neighpage: {time: "00:30:00"}
+  lj_base_256k_160k_newtonoff: {time: "00:30:00"}
+  lj_base_256k_160k_nosort: {time: "00:30:00"}
+  lj_base_256k_160k_nph: {time: "00:30:00"}
+  lj_base_256k_160k_npt: {time: "00:30:00"}
+  lj_base_256k_160k_nvt: {time: "00:30:00"}
+  lj_base_256k_160k_opt: {time: "00:30:00"}
+  lj_base_256k_160k_procs2d: {time: "00:30:00"}
+  lj_base_256k_160k_rc30: {time: "01:00:00"}
+  lj_base_256k_160k_rc35: {time: "01:00:00"}
+  lj_base_256k_160k_rdf: {time: "00:30:00"}
+  lj_base_256k_160k_rescale: {time: "00:30:00"}
+  lj_base_256k_160k_rho065: {time: "00:30:00"}
+  lj_base_256k_160k_rho100: {time: "00:30:00"}
+  lj_base_256k_160k_seed: {time: "00:30:00"}
+  lj_base_256k_160k_shift: {time: "00:30:00"}
+  lj_base_256k_160k_skin01: {time: "00:30:00"}
+  lj_base_256k_160k_skin10: {time: "00:30:00"}
+  lj_base_256k_160k_slabshape: {time: "00:30:00"}
+  lj_base_256k_160k_smoothlin: {time: "00:30:00"}
+  lj_base_256k_160k_soft: {time: "00:30:00"}
+  lj_base_256k_160k_split5: {time: "00:30:00"}
+  lj_base_256k_160k_stressatom: {time: "00:30:00"}
+  lj_base_256k_160k_tail: {time: "00:30:00"}
+  lj_base_256k_160k_temp01: {time: "00:30:00"}
+  lj_base_256k_160k_temp15: {time: "00:30:00"}
+  lj_base_256k_160k_thermo1: {time: "00:30:00"}
+  lj_base_256k_160k_thermo1000: {time: "00:30:00"}
+  lj_base_256k_160k_velgauss: {time: "00:30:00"}
+  lj_base_256k_160k_wallz: {time: "00:30:00"}
+  lj_base_256k_160k_wca: {time: "00:30:00"}
+  lj_base_256k_160k_wildcoeff: {time: "00:30:00"}
+  lj_base_256k_160k_yukawa: {time: "01:00:00"}
+  lj_base_256k_2000k: {time: "04:30:00"}
+  lj_base_256k_320k: {time: "01:00:00"}
+  lj_evap_500k_050k: {time: "00:30:00"}
+  lj_evap_500k_050k_slow: {time: "00:30:00"}
+  lj_evap_8002k_100k: {nodes: 2, time: "04:00:00"}
+  lj_meltquench_256k_200k: {time: "00:30:00"}
+  lj_meltquench_256k_200k_heatonly: {time: "00:30:00"}
+  lj_minimize_256k_105k: {time: "00:30:00"}
+  lj_minimize_256k_105k_fire: {time: "00:30:00"}
+  lj_pulse_1049k_168k: {time: "00:30:00"}
+  lj_shear3d_256k_160k: {time: "01:00:00"}
+  lj_size_004k_6000k: {ntasks_per_node: 16, time: "01:00:00"}
+  lj_size_016k_1600k: {ntasks_per_node: 16, time: "01:00:00"}
+  lj_size_1049k_100k: {time: "01:30:00"}
+  lj_size_131k_160k: {time: "00:30:00"}
+  lj_size_2048k_050k: {time: "01:00:00"}
+  lj_size_32000k_050k: {nodes: 4, time: "04:00:00"}
+  lj_size_4000k_025k: {time: "01:00:00"}
+  lj_size_442k_160k: {time: "01:00:00"}
+  lj_size_702k_160k: {time: "01:30:00"}
+  lj_size_8002k_012k: {nodes: 2, time: "00:30:00"}
+  lj_slab_259k_200k: {time: "01:00:00"}
+  lj_slab_259k_200k_balance: {time: "00:30:00"}
+  lj_slab_259k_200k_procs: {time: "00:30:00"}
+  lj_softpush_256k_170k: {time: "00:30:00"}
+  lj_stairdown_512k_180k: {time: "00:30:00"}
+  lj_stairup_16384k_400k: {nodes: 4, time: "03:00:00"}
+  lj_stairup_256k_240k: {time: "00:30:00"}
+  lj_stairup_512k_300k: {time: "00:30:00"}
+  lj_vecramp_131k_4000k: {time: "08:30:00"}
+  lj_vecramp_131k_600k: {time: "01:30:00"}
+  lj_vecramp_131k_600k_every10: {time: "01:00:00"}
+  mp_thermal_259k_200k: {time: "00:30:00"}
+  mp_viscosity_259k_200k: {time: "00:30:00"}
+  nacl_bmh_064k_024k: {ntasks_per_node: 16, time: "01:00:00"}
+  nacl_bmh_064k_024k_rc8: {ntasks_per_node: 16, time: "01:30:00"}
+  nacl_bmh_064k_024k_solid: {ntasks_per_node: 16, time: "01:00:00"}
+  nacl_bmh_512k_040k: {nodes: 4, time: "02:00:00"}
+  nemd2d_shear_144k_600k: {time: "01:00:00"}
+  nemd2d_shear_144k_600k_rc25: {time: "00:30:00"}
+  nemd2d_shear_144k_600k_slow: {time: "01:00:00"}
+  obstacle2d_flow_079k_1200k: {ntasks_per_node: 16, time: "00:30:00"}
+  obstacle2d_flow_079k_1200k_weak: {ntasks_per_node: 16, time: "00:30:00"}
+  rigid_cubes_1049k_500k: {nodes: 2, time: "03:00:00"}
+  rigid_cubes_131k_160k: {time: "00:30:00"}
+  rigid_cubes_131k_160k_global: {time: "00:30:00"}
+  rigid_cubes_131k_160k_noexclude: {time: "00:30:00"}
+  si_sw_110k_300k:
+    - {time: "01:00:00"}
+    - {ntasks_per_node: 16, time: "02:00:00"}
+    - {nodes: 2, time: "00:30:00"}
+    - {nodes: 4, time: "00:30:00"}
+    - {ntasks_per_node: 12, omp_num_threads: 4, time: "01:00:00"}
+  si_sw_110k_300k_melt: {time: "01:30:00"}
+  si_sw_110k_300k_npt: {time: "01:00:00"}
+  si_sw_110k_300k_t300: {time: "01:00:00"}
+  si_sw_262k_300k: {time: "02:00:00"}
+  si_tersoff_110k_300k: {time: "01:30:00"}
+  si_tersoff_2000k_200k: {nodes: 4, time: "02:30:00"}

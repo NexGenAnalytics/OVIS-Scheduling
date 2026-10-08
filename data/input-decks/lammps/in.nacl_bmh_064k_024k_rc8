@@ -1,0 +1,44 @@
+# in.nacl_bmh_064k_024k_rc8
+# Molten NaCl with an 8 A real-space cutoff.
+# Variant of nacl_bmh_064k_024k: pair cutoff 10 -> 8 A (expected impact: high).
+# Requires: KSPACE
+
+units           metal
+atom_style      charge
+boundary        p p p
+
+variable        nx equal 20
+variable        temp equal 1300.0
+variable        rc equal 8.0
+variable        nsteps equal 24000
+
+lattice         fcc 5.64
+region          box block 0 ${nx} 0 ${nx} 0 ${nx}
+create_box      2 box
+create_atoms    1 box
+lattice         fcc 5.64 origin 0.5 0.0 0.0
+create_atoms    2 box
+
+mass            1 22.990
+mass            2 35.453
+set             type 1 charge 1.0
+set             type 2 charge -1.0
+
+velocity        all create $(2.0*v_temp) 4433 loop geom
+
+pair_style      born/coul/long ${rc}
+pair_coeff      1 1 0.263690 0.317 2.340 1.048553 -0.499375
+pair_coeff      1 2 0.210918 0.317 2.755 6.990534 -8.675600
+pair_coeff      2 2 0.158221 0.317 3.170 75.05447 -150.7325
+kspace_style    pppm 1.0e-5
+
+neighbor        2.0 bin
+neigh_modify    delay 0 every 1 check yes
+
+timestep        0.002
+fix             1 all npt temp ${temp} ${temp} 0.2 iso 0.0 0.0 2.0
+
+thermo          100
+thermo_style    custom step temp pe ke etotal press vol elong
+
+run             ${nsteps}

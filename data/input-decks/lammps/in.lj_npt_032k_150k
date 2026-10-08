@@ -1,0 +1,35 @@
+# in.lj_npt_032k_150k
+# 32,000-atom Lennard-Jones melt with NPT barostat
+
+units           lj
+atom_style      atomic
+boundary        p p p
+
+variable        nx equal 20
+variable        rho equal 0.8442
+variable        temp equal 1.0
+variable        press equal 0.5
+variable        rc equal 2.5
+variable        nsteps equal 150000
+
+lattice         fcc ${rho}
+region          box block 0 ${nx} 0 ${nx} 0 ${nx}
+create_box      1 box
+create_atoms    1 box
+
+mass            1 1.0
+
+velocity        all create ${temp} 11223 loop geom
+
+pair_style      lj/cut ${rc}
+pair_coeff      1 1 1.0 1.0 ${rc}
+
+neighbor        0.3 bin
+neigh_modify    delay 0 every 1 check yes
+
+fix             1 all npt temp ${temp} ${temp} 1.0 iso ${press} ${press} 10.0
+
+thermo          100
+thermo_style    custom step temp pe ke etotal press density vol
+
+run             ${nsteps}

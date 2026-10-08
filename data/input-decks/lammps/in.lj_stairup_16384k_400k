@@ -1,0 +1,50 @@
+# in.lj_stairup_16384k_400k
+# LJ melt doubled nine times with replicate (32k -> 16.4M atoms), 40k steps per stage (multi-node).
+# Variant of lj_stairup_256k_240k: six more doubling stages, 60k -> 40k steps per stage (expected impact: high).
+
+units           lj
+atom_style      atomic
+boundary        p p p
+
+variable        temp equal 1.0
+variable        nstage equal 40000
+
+lattice         fcc 0.8442
+region          box block 0 20 0 20 0 20
+create_box      1 box
+create_atoms    1 box
+
+mass            1 1.0
+
+velocity        all create ${temp} 87287 loop geom
+
+pair_style      lj/cut 2.5
+pair_coeff      1 1 1.0 1.0 2.5
+
+neighbor        0.3 bin
+neigh_modify    delay 0 every 1 check yes
+
+fix             1 all nve
+
+thermo          500
+thermo_style    custom step atoms temp pe ke etotal press
+
+run             ${nstage}
+replicate       2 1 1
+run             ${nstage}
+replicate       1 2 1
+run             ${nstage}
+replicate       1 1 2
+run             ${nstage}
+replicate       2 1 1
+run             ${nstage}
+replicate       1 2 1
+run             ${nstage}
+replicate       1 1 2
+run             ${nstage}
+replicate       2 1 1
+run             ${nstage}
+replicate       1 2 1
+run             ${nstage}
+replicate       1 1 2
+run             ${nstage}
