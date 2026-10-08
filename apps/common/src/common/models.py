@@ -1,6 +1,12 @@
 from dataclasses import dataclass
 
 @dataclass(frozen=True)
+class DeckConcepts:
+  total_steps: float
+  units: str
+  atom_style: str
+
+@dataclass(frozen=True)
 class Feature:
   """
   Each LAMMPS instruction/feature as (command, arguments).

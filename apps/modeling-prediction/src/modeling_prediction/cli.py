@@ -1,5 +1,5 @@
 import argparse
-from common import define_deck_vector, Feature, parse_inputdeck
+from common import define_deck, Feature, parse_inputdeck
 import joblib
 import numpy as np
 from pathlib import Path
@@ -18,7 +18,7 @@ def main() -> None:
 
   content = Path(args.input).read_text(encoding="utf-8")
   inputdeck = parse_inputdeck(content)
-  deck_vector = define_deck_vector(inputdeck)
+  deck_vector = define_deck(inputdeck)
 
   X_new = np.asarray([deck_vector], dtype=float)
 

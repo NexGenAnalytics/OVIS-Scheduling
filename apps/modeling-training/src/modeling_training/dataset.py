@@ -1,5 +1,5 @@
 import numpy as np
-from common import Simulation, define_deck_vector
+from common import Simulation, define_deck
 
 def prepare_dataset(
   simulations: list[Simulation],
@@ -9,7 +9,8 @@ def prepare_dataset(
   y: list[list[float]] = [] # (number_of_simulations, number_of_target)
 
   for simulation in simulations:
-    deck_vector = define_deck_vector(simulation.inputdeck)
+    deck_vector = define_deck(simulation.inputdeck)
+    # print(deck_vector)
 
     values = np.asarray(
       [
