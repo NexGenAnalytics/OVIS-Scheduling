@@ -31,8 +31,17 @@ def load_simulations(path: Path) -> list[Simulation]:
 
   with path_manifest.open(newline="", encoding="utf-8") as csv_file:
     reader = csv.DictReader(csv_file)
+    rows = list(reader)
+    print(f"- Total {len(rows)} files")
 
-    for row in reader:
+    rc_nodes, rc_ntasks, rc_ntasks_per_node, rc_omp_num_threads = 1, 48, 48, 1
+    print(f"- Reference configuration: \
+      nodes={rc_nodes}, \
+      ntasks={rc_ntasks}, \
+      ntasks_per_node={rc_ntasks_per_node} \
+      and omp_num_threads={rc_omp_num_threads}")
+
+    for row in rows:
       status = row["status"]
 
       if row["status"] != "ok": continue
@@ -50,6 +59,14 @@ def load_simulations(path: Path) -> list[Simulation]:
       inputdeck_content: list[Feature] = parse_inputdeck(inputdeck_str)
       runprofile_content, total_time = parse_runprofile(runprofile_str)
 
+      if not (
+        int(row["nodes"]) == rc_nodes
+        and int(row["ntasks"]) == rc_ntasks
+        and int(row["ntasks_per_node"]) == rc_ntasks_per_node
+        and int(row["omp_num_threads"]) == rc_omp_num_threads
+      ):
+        continue
+
       simulation = Simulation(
         id = int(job_id),
         inputdeck = inputdeck_content,
@@ -59,8 +76,9 @@ def load_simulations(path: Path) -> list[Simulation]:
       simulations.append(simulation)
 
       totaltimeminutes = int(simulation.totaltime / 60)
-      print(f"Load {simulation.id}, exec. time of {totaltimeminutes} minutes")
+      # print(f"Load {simulation.id}, exec. time of {totaltimeminutes} minutes")
 
+  print(f"- Load {len(simulations)} simulations")
   return simulations
 
 def split_set(simulations: list[Simulation]) -> tuple[

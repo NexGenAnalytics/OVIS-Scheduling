@@ -13,6 +13,16 @@ Entry point for an app is `apps/[name]/src/[name]/cli.py`.
 - `evaluation.py`: Metrics and result data structures
 - `models.py`: Dummy, Ridge, MLP model factories
 
+### modeling_prediction
+
+Expected CPU and memory for this input deck under the reference configuration.
+
+Reference configuration are:
+- `nodes` == 1
+- `ntasks` == 48
+- `ntasks_per_node` == 48
+- `omp_num_threads` == 1
+
 ## Setup
 
 ```bash
