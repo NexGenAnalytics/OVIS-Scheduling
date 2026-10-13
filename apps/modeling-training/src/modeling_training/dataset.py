@@ -10,6 +10,9 @@ def prepare_dataset(
 
   for simulation in simulations:
     deck_vector = define_deck(simulation.inputdeck)
+
+    #deck_vector.append(float(simulation.totaltime))
+    deck_vector.append(float(simulation.particlecount))
     # print(deck_vector)
 
     values = np.asarray(

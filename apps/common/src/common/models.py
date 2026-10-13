@@ -29,4 +29,9 @@ class Simulation:
   id: int
   inputdeck: list[Feature]
   runprofile: list[Metric]
-  totaltime: int # in seconds
+  # Execution time of the simulation in seconds
+  totaltime: int
+  # Number simulated particles (atoms, molecules)
+  # that LAMMPS must process.
+  particlecount: float
+

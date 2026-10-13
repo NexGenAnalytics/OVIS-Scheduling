@@ -25,7 +25,7 @@ def init_parser() -> argparse.Namespace:
 def load_simulations(path: Path) -> list[Simulation]:
   simulations: list[Simulation] = []
 
-  path_manifest = path / "ldms" / "ldms_manifest_20261006-084316.csv"
+  path_manifest = path / "ldms" / "summary_20261006-084316.csv"
   path_inputdecks = path / "input-decks" / "lammps"
   path_profiles = path / "ldms" / "cpu_mpi_omp"
 
@@ -59,6 +59,9 @@ def load_simulations(path: Path) -> list[Simulation]:
       inputdeck_content: list[Feature] = parse_inputdeck(inputdeck_str)
       runprofile_content, total_time = parse_runprofile(runprofile_str)
 
+      particle_count = row["particle_count"]
+      # particle_count_final = row["particle_count_final"]
+
       if not (
         int(row["nodes"]) == rc_nodes
         and int(row["ntasks"]) == rc_ntasks
@@ -72,11 +75,13 @@ def load_simulations(path: Path) -> list[Simulation]:
         inputdeck = inputdeck_content,
         runprofile = runprofile_content,
         totaltime = int(total_time),
+        particlecount = particle_count,
       )
       simulations.append(simulation)
 
       totaltimeminutes = int(simulation.totaltime / 60)
-      # print(f"Load {simulation.id}, exec. time of {totaltimeminutes} minutes")
+      # print(f"Load {simulation.id}")
+      # print(f"-> {totaltimeminutes} min for {particle_count} particles.")
 
   print(f"- Load {len(simulations)} simulations")
   return simulations
