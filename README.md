@@ -11,7 +11,7 @@ Entry point for an app is `apps/[name]/src/[name]/cli.py`.
 - `benchmark.py`: Train models and compare results
 - `dataset.py`: Loading, feature extraction, targets, splitting
 - `evaluation.py`: Metrics and result data structures
-- `models.py`: Dummy, Ridge, MLP model factories
+- `models.py`: Dummy, Ridge, MLP, Random Forest, Extra Trees, Hist Gradient Boosting model factories
 
 ### modeling_prediction
 

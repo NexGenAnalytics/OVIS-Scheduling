@@ -3,6 +3,7 @@ from .benchmark import (display_benchmark, run_benchmark, select_best_model)
 from common import (Feature, Metric, Simulation)
 from common import (parse_inputdeck, parse_runprofile)
 from .dataset import prepare_dataset
+from .evaluation import evaluate_predictions
 import csv
 import joblib
 from .models import RANDOM_SEED
@@ -143,6 +144,17 @@ def main() -> None:
     best_result = select_best_model(benchmark_results, target="mean")
     print(f"Selected model: {best_result.name}")
 
+    # Test
+    X_test, y_test = prepare_dataset(testing_set, metric)
+    test_predictions = best_result.model.predict(X_test)
+    test_scores = evaluate_predictions(y_test, test_predictions)
+
+    print(f"Held-out test evaluation: {best_result.name} ({len(y_test)} simulations)")
+    print(f"{'TARGET':<10}{'MAE':>14}{'RMSE':>14}")
+    for score in test_scores:
+      print(f"{score.target:<10}{score.mae:>14.4f}{score.rmse:>14.4f}")
+
+    # Save model
     model_path = save_model(best_result.model, resource)
     print(f"Saved {best_result.name} to {model_path}")
 
