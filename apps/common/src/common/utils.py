@@ -1,5 +1,6 @@
 from common.models import DeckConcepts, Feature
-import math
+from common.scalars import resolve_scalar as _resolve_scalar
+from common.settings import define_resource_settings
 
 # Fixed order shared by training and prediction. Never derive it from a dataset.
 PAIR_STYLES = (
@@ -160,25 +161,6 @@ def find_pair_styles(inputdeck: list[Feature]) -> tuple[str, ...]:
       styles.extend(arg for arg in feature.arguments[1:] if arg in PAIR_STYLES)
   return tuple(styles)
 
-def _resolve_scalar(value: str, variables: dict[str, str]) -> float | None:
-  """Resolve literals and scalar variable aliases without executing deck code."""
-  seen = set()
-  while True:
-    try:
-      number = float(value)
-      return number if math.isfinite(number) else None
-    except ValueError:
-      if value.startswith("${") and value.endswith("}"):
-        name = value[2:-1]
-      elif value.startswith("v_"):
-        name = value[2:]
-      else:
-        return None
-      if name in seen or name not in variables:
-        return None
-      seen.add(name)
-      value = variables[name]
-
 def find_density(inputdeck: list[Feature]) -> list[float]:
   """Return [initial LJ lattice reduced density, found], or [0, 0].
 
@@ -285,6 +267,7 @@ def define_deck(inputdeck: list[Feature]) -> list[float]:
   """
   Return a stable, entirely numeric model vector for an input deck.
   """
+  atom_mapping, long_range_settings = define_resource_settings(inputdeck)
   deck = DeckConcepts(
     total_steps=find_total_steps(inputdeck),
     units=find_units(inputdeck),
@@ -293,6 +276,8 @@ def define_deck(inputdeck: list[Feature]) -> list[float]:
     density=find_density(inputdeck),
     simulation_family=find_simulation_family(inputdeck),
     interaction_cutoff=find_interaction_cutoff(inputdeck),
+    atom_mapping=atom_mapping,
+    long_range_settings=long_range_settings,
   )
   # print(deck)
 
@@ -305,4 +290,6 @@ def define_deck(inputdeck: list[Feature]) -> list[float]:
     *deck.density,
     *[float(deck.simulation_family == family) for family in SIMULATION_FAMILIES],
     *deck.interaction_cutoff,
+    *deck.atom_mapping,
+    *deck.long_range_settings,
   ]

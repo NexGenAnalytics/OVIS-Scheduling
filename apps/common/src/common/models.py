@@ -9,6 +9,8 @@ class DeckConcepts:
   density: list[float]
   simulation_family: str
   interaction_cutoff: list[float]
+  atom_mapping: list[float]
+  long_range_settings: list[float]
 
 @dataclass(frozen=True)
 class Feature:

@@ -11,13 +11,15 @@ Replace exact variable-name extraction with normalized concepts such as:
 | `density` | Initial LJ lattice reduced density, followed by a presence flag. Resolves numeric literals and scalar `equal`/`index` variable references regardless of variable name. Missing or unresolved values produce `[0.0, 0.0]`. |
 | `simulation_family` | Fixed one-hot encoding of a coarse workload family inferred from commands, without relying on deck filenames or comments. See classification rules below. |
 | `interaction_cutoff` | Largest resolved, explicitly configured cutoff distance across supported `pair_style` and `pair_coeff` commands and phases, followed by a presence flag. Missing values produce `[0.0, 0.0]`. |
+| `atom_mapping` | Fixed one-hot encoding of atom-map policy: `none`, `array`, `hash`, `auto`, `other`, `missing`. |
+| `long_range_settings` | Solver category, requested accuracy, interpolation orders, explicit Coulombic/dispersion meshes, and explicit dispersion force tolerances before the first `run`. |
 
 Makes different decks comparable.
 
 Vector order: total steps and presence flag (2), units (2), atom style (5),
 pair styles (25), density and presence flag (2), simulation family (9), interaction
-cutoff and presence flag (2). Training and prediction both append the initial
-particle count, giving **48 model inputs**.
+cutoff and presence flag (2), atom mapping (6), long-range settings (29). Training
+and prediction both append the initial particle count, giving **83 model inputs**.
 
 ## `simulation_family`
 
