@@ -113,9 +113,10 @@ source .venv/bin/activate # for Linux and Mac
 (.venv) modeling-training --simu {path}
 # simu (simulations): path to the folder with input decks and run profiles
 
-(.venv) modeling-prediction --model {path} --input {path}
+(.venv) modeling-prediction --model {path} --input {path} --particle-count {count}
 # model: path to load model
 # input: path to the input deck you want to predict
+# particle-count: initial number of simulated particles
 ```
 
 ## How to quit
@@ -130,10 +131,10 @@ source .venv/bin/activate # for Linux and Mac
 (.venv) modeling-training --simu data/
 
 (.venv) modeling-prediction --model output/models/cpu_model.joblib \
-  --input data/input-decks/in.test
+  --input data/input-decks/in.test --particle-count 256000
 
 (.venv) modeling-prediction --model output/models/memory_model.joblib \
-  --input data/input-decks/in.test
+  --input data/input-decks/in.test --particle-count 256000
 ```
 
 # Results
