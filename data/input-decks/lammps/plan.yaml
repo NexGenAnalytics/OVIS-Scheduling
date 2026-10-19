@@ -8,6 +8,51 @@ defaults:
   omp_num_threads: 1
   time: "01:00:00"
 decks:
+  coul_grid_016k_080k_acc1e3_order4: {time: "00:30:00"}
+  coul_grid_016k_080k_acc1e3_order5: {time: "00:30:00"}
+  coul_grid_016k_080k_acc1e3_order7: {time: "00:30:00"}
+  coul_grid_016k_080k_acc1e4_order4: {time: "00:30:00"}
+  coul_grid_016k_080k_acc1e4_order5: {time: "00:30:00"}
+  coul_grid_016k_080k_acc1e4_order7: {time: "00:30:00"}
+  coul_grid_016k_080k_acc1e5_order4: {time: "00:30:00"}
+  coul_grid_016k_080k_acc1e5_order5: {time: "00:30:00"}
+  coul_grid_016k_080k_acc1e5_order7: {time: "00:30:00"}
+  coul_grid_055k_080k_acc1e3_order4: {time: "01:00:00"}
+  coul_grid_055k_080k_acc1e3_order5: {time: "01:00:00"}
+  coul_grid_055k_080k_acc1e3_order7: {time: "01:00:00"}
+  coul_grid_055k_080k_acc1e4_order4: {time: "01:00:00"}
+  coul_grid_055k_080k_acc1e4_order5: {time: "01:00:00"}
+  coul_grid_055k_080k_acc1e4_order7: {time: "01:00:00"}
+  coul_grid_055k_080k_acc1e5_order4: {time: "02:00:00"}
+  coul_grid_055k_080k_acc1e5_order5: {time: "01:30:00"}
+  coul_grid_055k_080k_acc1e5_order7: {time: "01:30:00"}
+  coul_grid_131k_080k_acc1e3_order4: {time: "02:00:00"}
+  coul_grid_131k_080k_acc1e3_order5: {time: "01:30:00"}
+  coul_grid_131k_080k_acc1e3_order7: {time: "02:00:00"}
+  coul_grid_131k_080k_acc1e4_order4: {time: "02:30:00"}
+  coul_grid_131k_080k_acc1e4_order5: {time: "02:00:00"}
+  coul_grid_131k_080k_acc1e4_order7: {time: "02:00:00"}
+  coul_grid_131k_080k_acc1e5_order4: {time: "04:00:00"}
+  coul_grid_131k_080k_acc1e5_order5: {time: "03:00:00"}
+  coul_grid_131k_080k_acc1e5_order7: {time: "03:30:00"}
+  coul_grid_256k_080k_acc1e3_order4: {time: "04:00:00"}
+  coul_grid_256k_080k_acc1e3_order5: {time: "03:00:00"}
+  coul_grid_256k_080k_acc1e3_order7: {time: "03:30:00"}
+  coul_grid_256k_080k_acc1e4_order4: {time: "04:30:00"}
+  coul_grid_256k_080k_acc1e4_order5: {time: "03:30:00"}
+  coul_grid_256k_080k_acc1e4_order7: {time: "04:00:00"}
+  coul_grid_256k_080k_acc1e5_order4: {time: "07:30:00"}
+  coul_grid_256k_080k_acc1e5_order5: {time: "05:30:00"}
+  coul_grid_256k_080k_acc1e5_order7: {time: "06:30:00"}
+  coul_grid_500k_080k_acc1e3_order4: {time: "07:00:00"}
+  coul_grid_500k_080k_acc1e3_order5: {time: "05:30:00"}
+  coul_grid_500k_080k_acc1e3_order7: {time: "06:00:00"}
+  coul_grid_500k_080k_acc1e4_order4: {time: "09:00:00"}
+  coul_grid_500k_080k_acc1e4_order5: {time: "07:00:00"}
+  coul_grid_500k_080k_acc1e4_order7: {time: "07:30:00"}
+  coul_grid_500k_080k_acc1e5_order4: {time: "14:00:00"}
+  coul_grid_500k_080k_acc1e5_order5: {time: "11:00:00"}
+  coul_grid_500k_080k_acc1e5_order7: {time: "12:00:00"}
   coul_pppm_062k_020k_ewald: {ntasks_per_node: 16, time: "04:00:00"}
   coul_pppm_062k_040k_acc1e6: {ntasks_per_node: 16, time: "04:00:00"}
   coul_pppm_062k_080k:
@@ -139,6 +184,51 @@ decks:
   lj_evap_500k_050k: {time: "00:30:00"}
   lj_evap_500k_050k_slow: {time: "00:30:00"}
   lj_evap_8002k_100k: {nodes: 2, time: "04:00:00"}
+  lj_grid_016k_160k_rho065_rc20: {time: "00:30:00"}
+  lj_grid_016k_160k_rho065_rc25: {time: "00:30:00"}
+  lj_grid_016k_160k_rho065_rc35: {time: "00:30:00"}
+  lj_grid_016k_160k_rho084_rc20: {time: "00:30:00"}
+  lj_grid_016k_160k_rho084_rc25: {time: "00:30:00"}
+  lj_grid_016k_160k_rho084_rc35: {time: "00:30:00"}
+  lj_grid_016k_160k_rho100_rc20: {time: "00:30:00"}
+  lj_grid_016k_160k_rho100_rc25: {time: "00:30:00"}
+  lj_grid_016k_160k_rho100_rc35: {time: "00:30:00"}
+  lj_grid_055k_160k_rho065_rc20: {time: "00:30:00"}
+  lj_grid_055k_160k_rho065_rc25: {time: "00:30:00"}
+  lj_grid_055k_160k_rho065_rc35: {time: "00:30:00"}
+  lj_grid_055k_160k_rho084_rc20: {time: "00:30:00"}
+  lj_grid_055k_160k_rho084_rc25: {time: "00:30:00"}
+  lj_grid_055k_160k_rho084_rc35: {time: "00:30:00"}
+  lj_grid_055k_160k_rho100_rc20: {time: "00:30:00"}
+  lj_grid_055k_160k_rho100_rc25: {time: "00:30:00"}
+  lj_grid_055k_160k_rho100_rc35: {time: "00:30:00"}
+  lj_grid_1049k_160k_rho065_rc20: {time: "01:30:00"}
+  lj_grid_1049k_160k_rho065_rc25: {time: "02:30:00"}
+  lj_grid_1049k_160k_rho065_rc35: {time: "05:30:00"}
+  lj_grid_1049k_160k_rho084_rc20: {time: "02:00:00"}
+  lj_grid_1049k_160k_rho084_rc25: {time: "03:00:00"}
+  lj_grid_1049k_160k_rho084_rc35: {time: "07:00:00"}
+  lj_grid_1049k_160k_rho100_rc20: {time: "02:00:00"}
+  lj_grid_1049k_160k_rho100_rc25: {time: "03:30:00"}
+  lj_grid_1049k_160k_rho100_rc35: {time: "08:30:00"}
+  lj_grid_2048k_160k_rho065_rc20: {time: "02:30:00"}
+  lj_grid_2048k_160k_rho065_rc25: {time: "04:30:00"}
+  lj_grid_2048k_160k_rho065_rc35: {time: "10:30:00"}
+  lj_grid_2048k_160k_rho084_rc20: {time: "03:00:00"}
+  lj_grid_2048k_160k_rho084_rc25: {time: "05:30:00"}
+  lj_grid_2048k_160k_rho084_rc35: {time: "13:30:00"}
+  lj_grid_2048k_160k_rho100_rc20: {time: "04:00:00"}
+  lj_grid_2048k_160k_rho100_rc25: {time: "06:30:00"}
+  lj_grid_2048k_160k_rho100_rc35: {time: "16:00:00"}
+  lj_grid_256k_160k_rho065_rc20: {time: "00:30:00"}
+  lj_grid_256k_160k_rho065_rc25: {time: "01:00:00"}
+  lj_grid_256k_160k_rho065_rc35: {time: "01:30:00"}
+  lj_grid_256k_160k_rho084_rc20: {time: "00:30:00"}
+  lj_grid_256k_160k_rho084_rc25: {time: "01:00:00"}
+  lj_grid_256k_160k_rho084_rc35: {time: "02:00:00"}
+  lj_grid_256k_160k_rho100_rc20: {time: "00:30:00"}
+  lj_grid_256k_160k_rho100_rc25: {time: "01:00:00"}
+  lj_grid_256k_160k_rho100_rc35: {time: "02:00:00"}
   lj_meltquench_256k_200k: {time: "00:30:00"}
   lj_meltquench_256k_200k_heatonly: {time: "00:30:00"}
   lj_minimize_256k_105k: {time: "00:30:00"}
