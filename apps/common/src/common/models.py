@@ -2,9 +2,11 @@ from dataclasses import dataclass
 
 @dataclass(frozen=True)
 class DeckConcepts:
-  total_steps: float
+  total_steps: list[float]
   units: str
   atom_style: str
+  pair_styles: tuple[str, ...]
+  density: list[float]
 
 @dataclass(frozen=True)
 class Feature:
