@@ -7,6 +7,8 @@ class DeckConcepts:
   atom_style: str
   pair_styles: tuple[str, ...]
   density: list[float]
+  simulation_family: str
+  interaction_cutoff: list[float]
 
 @dataclass(frozen=True)
 class Feature:

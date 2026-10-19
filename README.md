@@ -119,6 +119,9 @@ source .venv/bin/activate # for Linux and Mac
 # particle-count: initial number of simulated particles
 ```
 
+See the [deck vector schema](doc/deck-vector-schema.md) for
+classification rules and cutoff coverage.
+
 ## How to quit
 
 ```bash
