@@ -1,0 +1,84 @@
+metrics:
+- Active
+- CPU
+jobs:
+  10798767:
+    build: cpu_mpi_omp
+    problem: binary_lj_032k_150k
+    input_deck: in.binary_lj_032k_150k
+    ntasks: 4
+    nodes: 1
+    omp_num_threads: 1
+    time: 01:00:00
+  10798768:
+    build: cpu_mpi_omp
+    problem: charged_lj_pppm_032k_040k
+    input_deck: in.charged_lj_pppm_032k_040k
+    ntasks: 4
+    nodes: 1
+    omp_num_threads: 1
+    time: 01:00:00
+  10798769:
+    build: cpu_mpi_omp
+    problem: lj_melt_032k_170k_seedA
+    input_deck: in.lj_melt_032k_170k_seedA
+    ntasks: 4
+    nodes: 1
+    omp_num_threads: 1
+    time: 01:00:00
+  10798770:
+    build: cpu_mpi_omp
+    problem: lj_melt_032k_170k_seedB
+    input_deck: in.lj_melt_032k_170k_seedB
+    ntasks: 4
+    nodes: 1
+    omp_num_threads: 1
+    time: 01:00:00
+  10798771:
+    build: cpu_mpi_omp
+    problem: lj_melt_032k_dense_160k
+    input_deck: in.lj_melt_032k_dense_160k
+    ntasks: 4
+    nodes: 1
+    omp_num_threads: 1
+    time: 01:00:00
+  10798772:
+    build: cpu_mpi_omp
+    problem: lj_melt_032k_hot_170k
+    input_deck: in.lj_melt_032k_hot_170k
+    ntasks: 4
+    nodes: 1
+    omp_num_threads: 1
+    time: 01:00:00
+  10798773:
+    build: cpu_mpi_omp
+    problem: lj_melt_108k_070k
+    input_deck: in.lj_melt_108k_070k
+    ntasks: 4
+    nodes: 1
+    omp_num_threads: 1
+    time: 01:00:00
+  10798774:
+    build: cpu_mpi_omp
+    problem: lj_npt_032k_150k
+    input_deck: in.lj_npt_032k_150k
+    ntasks: 4
+    nodes: 1
+    omp_num_threads: 1
+    time: 01:00:00
+  10798775:
+    build: cpu_mpi_omp
+    problem: lj_nvt_032k_170k
+    input_deck: in.lj_nvt_032k_170k
+    ntasks: 4
+    nodes: 1
+    omp_num_threads: 1
+    time: 01:00:00
+  10798776:
+    build: cpu_mpi_omp
+    problem: morse_fluid_032k_120k
+    input_deck: in.morse_fluid_032k_120k
+    ntasks: 4
+    nodes: 1
+    omp_num_threads: 1
+    time: 01:00:00

@@ -1,0 +1,37 @@
+# in.si_tersoff_2000k_200k
+# 2,000,376-atom silicon crystal with the Tersoff potential (multi-node).
+# Variant of si_sw_110k_300k: pair sw -> tersoff, nx 24 -> 63, nsteps 300k -> 200k (expected impact: high).
+# Requires: MANYBODY
+
+units           metal
+atom_style      atomic
+boundary        p p p
+
+variable        nx equal 63
+variable        temp equal 1000.0
+variable        nsteps equal 200000
+
+print           "Si Si Si 3.0 1.0 1.3258 4.8381 2.0417 0.0000 22.956 0.33675 1.3258 95.373 3.0 0.2 3.2394 3264.7" file si_tersoff_2000k_200k.tersoff screen no
+
+lattice         diamond 5.431
+region          box block 0 ${nx} 0 ${nx} 0 ${nx}
+create_box      1 box
+create_atoms    1 box
+
+mass            1 28.0855
+
+pair_style      tersoff
+pair_coeff      * * si_tersoff_2000k_200k.tersoff Si
+
+neighbor        1.0 bin
+neigh_modify    delay 0 every 1 check yes
+
+velocity        all create $(2.0*v_temp) 4928459 loop geom
+
+timestep        0.001
+fix             1 all nvt temp ${temp} ${temp} 0.1
+
+thermo          100
+thermo_style    custom step temp pe ke etotal press vol
+
+run             ${nsteps}
