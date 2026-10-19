@@ -25,5 +25,5 @@ def main() -> None:
   predicted_values = model.predict(X_new)[0]
 
   TARGET_NAMES = ("max", "mean", "min")
-  cpu_prediction = dict(zip(TARGET_NAMES, predicted_values))
-  print(cpu_prediction)
+  prediction = dict(zip(TARGET_NAMES, predicted_values))
+  print(prediction)

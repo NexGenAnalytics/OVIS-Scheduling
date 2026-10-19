@@ -141,7 +141,7 @@ def main() -> None:
 
     display_benchmark(benchmark_results)
 
-    best_result = select_best_model(benchmark_results, target="mean")
+    best_result = select_best_model(benchmark_results)
     print(f"Selected model: {best_result.name}")
 
     # Test
