@@ -140,89 +140,90 @@ classification rules and cutoff coverage.
   --input data/input-decks/in.test --particle-count 256000
 ```
 
+# Updates
+
+Oct. 22 2026:
+- Usable simulations: 117 -> 164
+- Distinct feature vectors: 58 -> 105
+- Training simulations: 81 -> 114
+
 # Results
 
 After training (selection summary; per-target error tables are also printed):
 ```txt
-- Total 190 files
+- Total 275 files
 - Reference configuration:       nodes=1,       ntasks=48,       ntasks_per_node=48       and omp_num_threads=1
-- Load 117 simulations
+- Load 164 simulations
 
 ---------------- RESOURCE: cpu ----------------
 MODEL          TARGET               MAE          RMSE  MAE VS DUMMY    RMSE VS DUMMY
-dummy          max               0.1042        0.1655          0.0%          0.0%
-dummy          mean              1.8085        2.3681          0.0%          0.0%
-dummy          min              11.4478       13.6752          0.0%          0.0%
-ridge          max               0.1124        0.1654         -7.9%          0.0%
-ridge          mean              1.9798        2.4956         -9.5%         -5.4%
-ridge          min              11.2496       13.5208          1.7%          1.1%
-mlp            max               0.0926        0.1568         11.1%          5.2%
-mlp            mean              1.8442        3.1369         -2.0%        -32.5%
-mlp            min              12.5802       15.4968         -9.9%        -13.3%
-random_forest  max               0.0755        0.1301         27.5%         21.4%
-random_forest  mean              1.6333        2.8115          9.7%        -18.7%
-random_forest  min              12.0874       15.4488         -5.6%        -13.0%
-extra_trees    max               0.0817        0.1364         21.6%         17.6%
-extra_trees    mean              1.6648        2.7982          7.9%        -18.2%
-extra_trees    min              11.5533       14.8908         -0.9%         -8.9%
-hist_gb        max               0.0777        0.1321         25.5%         20.2%
-hist_gb        mean              1.7541        3.0937          3.0%        -30.6%
-hist_gb        min              12.4505       16.0588         -8.8%        -17.4%
+dummy          max               0.2389        0.2433          0.0%          0.0%
+dummy          mean              2.2388        3.1545          0.0%          0.0%
+dummy          min              14.3373       16.0635          0.0%          0.0%
+ridge          max               0.4195        0.4881        -75.6%       -100.6%
+ridge          mean              2.1588        2.9460          3.6%          6.6%
+ridge          min              13.3528       15.2501          6.9%          5.1%
+mlp            max               0.2786        1.3378        -16.6%       -449.8%
+mlp            mean              1.4397        2.2753         35.7%         27.9%
+mlp            min              15.0328       17.0019         -4.9%         -5.8%
+random_forest  max               0.1438        0.3583         39.8%        -47.2%
+random_forest  mean              1.3765        2.1627         38.5%         31.4%
+random_forest  min              13.5002       15.9636          5.8%          0.6%
+extra_trees    max               0.0751        0.1359         68.6%         44.1%
+extra_trees    mean              1.2595        1.9755         43.7%         37.4%
+extra_trees    min              13.2757       15.5999          7.4%          2.9%
+hist_gb        max               0.2298        0.6686          3.8%       -174.8%
+hist_gb        mean              1.3516        2.3429         39.6%         25.7%
+hist_gb        min              13.8952       16.6437          3.1%         -3.6%
 
 Combined validation score (all targets, MAE + RMSE; lower is better):
 dummy                  1.0000
-ridge                  1.0330
-mlp                    1.0689
-random_forest          0.9644
-extra_trees            0.9681
-hist_gb                1.0136
-Selected model: random_forest
-Held-out test evaluation: random_forest (12 simulations)
+ridge                  1.2569
+mlp                    1.6893
+random_forest          0.8850
+extra_trees            0.6598
+hist_gb                1.1770
+Selected model: extra_trees
+Held-out test evaluation: extra_trees (17 simulations)
 TARGET               MAE          RMSE
-max               0.0790        0.1741
-mean              1.7440        3.0562
-min              14.2470       19.0316
-Saved random_forest to output/models/cpu_model.joblib
+max               0.7717        1.5321
+mean              1.3540        1.7482
+min               8.6703       11.1452
+Saved extra_trees to output/models/cpu_model.joblib
 
 ---------------- RESOURCE: memory ----------------
 MODEL          TARGET               MAE          RMSE  MAE VS DUMMY    RMSE VS DUMMY
-dummy          max           14089.0844    22731.4456          0.0%          0.0%
-dummy          mean           9101.5515    10995.8565          0.0%          0.0%
-dummy          min            7314.4691     8482.2985          0.0%          0.0%
-ridge          max           13475.0372    22619.7437          4.4%          0.5%
-ridge          mean           8752.8844    11091.7623          3.8%         -0.9%
-ridge          min            7139.9493     8382.7805          2.4%          1.2%
-mlp            max           12522.0123    21605.0552         11.1%          5.0%
-mlp            mean           8053.5566    10273.6957         11.5%          6.6%
-mlp            min            8687.3360    10151.6534        -18.8%        -19.7%
-random_forest  max           11794.1934    19927.1968         16.3%         12.3%
-random_forest  mean           7881.5613     9329.6594         13.4%         15.2%
-random_forest  min            9690.6939    10848.2312        -32.5%        -27.9%
-extra_trees    max           11581.8887    20554.6640         17.8%          9.6%
-extra_trees    mean           7360.7467     9009.5850         19.1%         18.1%
-extra_trees    min            8292.1306     9409.0039        -13.4%        -10.9%
-hist_gb        max           11968.2803    20161.7959         15.1%         11.3%
-hist_gb        mean           8183.8112     9541.6061         10.1%         13.2%
-hist_gb        min           10285.2144    11950.1282        -40.6%        -40.9%
+dummy          max           35648.9027    66333.0758          0.0%          0.0%
+dummy          mean          33337.2356    67817.6819          0.0%          0.0%
+dummy          min           30930.5008    70613.0797          0.0%          0.0%
+ridge          max           20878.7660    44421.8451         41.4%         33.0%
+ridge          mean          19216.4853    45345.6000         42.4%         33.1%
+ridge          min           27304.8738    67065.6122         11.7%          5.0%
+mlp            max           22409.6675    43773.7604         37.1%         34.0%
+mlp            mean          18916.9481    43762.9887         43.3%         35.5%
+mlp            min           27945.5242    68394.7925          9.7%          3.1%
+random_forest  max           22974.4532    49209.9948         35.6%         25.8%
+random_forest  mean          20743.8295    52975.8733         37.8%         21.9%
+random_forest  min           27951.0885    66594.9815          9.6%          5.7%
+extra_trees    max           24974.4388    51887.8141         29.9%         21.8%
+extra_trees    mean          23379.9860    55420.0235         29.9%         18.3%
+extra_trees    min           27618.5837    67134.7369         10.7%          4.9%
+hist_gb        max           23902.1706    48863.1720         33.0%         26.3%
+hist_gb        mean          19001.6799    49053.1097         43.0%         27.7%
+hist_gb        min           29731.7952    66678.8200          3.9%          5.6%
 
 Combined validation score (all targets, MAE + RMSE; lower is better):
 dummy                  1.0000
-ridge                  0.9811
-mlp                    1.0071
-random_forest          1.0053
-extra_trees            0.9329
-hist_gb                1.0531
-Selected model: extra_trees
-Held-out test evaluation: extra_trees (12 simulations)
+ridge                  0.7222
+mlp                    0.7289
+random_forest          0.7727
+extra_trees            0.8075
+hist_gb                0.7677
+Selected model: ridge
+Held-out test evaluation: ridge (17 simulations)
 TARGET               MAE          RMSE
-max           18289.3304    27169.1706
-mean          11145.8525    14515.7275
-min           13117.7251    15271.8091
-Saved extra_trees to output/models/memory_model.joblib
-```
-
-After prediction:
-```txt
-Model: output/models/cpu_model.joblib
-{'max': 4.316, 'mean': 4.035, 'min': 4.000}
+max           17915.1845    26709.6032
+mean          11555.7302    18501.4972
+min           12369.2333    15238.0424
+Saved ridge to output/models/memory_model.joblib
 ```
