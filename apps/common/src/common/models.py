@@ -11,6 +11,7 @@ class DeckConcepts:
   interaction_cutoff: list[float]
   atom_mapping: list[float]
   long_range_settings: list[float]
+  # TODO: MORE FEATURES TO DISTINGUISH EACH RUNS
 
 @dataclass(frozen=True)
 class Feature:
