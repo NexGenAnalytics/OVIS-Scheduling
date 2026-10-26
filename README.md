@@ -149,6 +149,11 @@ Oct. 22 2026:
 
 # Results
 
+The held-out memory report also checks whether at least 90% of peak-memory
+predictions are within ±20% of the measured peaks. It prints PASS/FAIL, the
+number of predictions within tolerance, and the rates of underestimation and
+underestimation by more than 20%.
+
 After training (selection summary; per-target error tables are also printed):
 ```txt
 - Total 275 files

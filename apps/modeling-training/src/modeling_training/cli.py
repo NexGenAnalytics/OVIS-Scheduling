@@ -3,7 +3,7 @@ from .benchmark import (display_benchmark, run_benchmark, select_best_model)
 from common import (Feature, Metric, Simulation)
 from common import (parse_inputdeck, parse_runprofile)
 from .dataset import prepare_dataset
-from .evaluation import evaluate_predictions
+from .evaluation import TARGET_NAMES, evaluate_predictions
 import csv
 import joblib
 from .models import RANDOM_SEED
@@ -117,6 +117,38 @@ def save_model(model: any, name: str) -> Path:
 
   return model_path
 
+def display_peak_memory_check(
+  expected: np.ndarray,
+  predicted: np.ndarray,
+) -> None:
+  peak_index = TARGET_NAMES.index("max")
+  actual_peaks = expected[:, peak_index]
+  predicted_peaks = predicted[:, peak_index]
+
+  print("\nPeak-memory accuracy (held-out test):")
+  if actual_peaks.size == 0 or np.any(actual_peaks <= 0):
+    print("Cannot assess relative accuracy: actual peaks must be positive.")
+    return
+
+  relative_errors = np.abs(predicted_peaks - actual_peaks) / actual_peaks
+  within_tolerance = int(np.count_nonzero(relative_errors <= 0.20))
+  total = len(actual_peaks)
+  coverage = within_tolerance / total
+  status = "PASS" if coverage >= 0.90 else "FAIL"
+
+  underestimated = int(np.count_nonzero(predicted_peaks < actual_peaks))
+  large_underestimates = int(np.count_nonzero(
+    (predicted_peaks < actual_peaks) & (relative_errors > 0.20)
+  ))
+
+  print(f"Within ±20%: {within_tolerance}/{total} ({coverage:.1%})")
+  print(f"Target ≥90% within ±20%: {status}")
+  print(f"Underestimated: {underestimated}/{total} ({underestimated / total:.1%})")
+  print(
+    f"Underestimated by >20%: {large_underestimates}/{total} "
+    f"({large_underestimates / total:.1%})"
+  )
+
 def main() -> None:
   args: argparse.Namespace = init_parser()
   simulations: list[Simulation] = load_simulations(args.simu)
@@ -153,6 +185,8 @@ def main() -> None:
     print(f"{'TARGET':<10}{'MAE':>14}{'RMSE':>14}")
     for score in test_scores:
       print(f"{score.target:<10}{score.mae:>14.4f}{score.rmse:>14.4f}")
+
+    display_peak_memory_check(y_test, test_predictions)
 
     # Save model
     model_path = save_model(best_result.model, resource)
