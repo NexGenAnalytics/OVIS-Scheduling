@@ -98,6 +98,12 @@ Reference configuration are:
 - `ntasks_per_node` == 48
 - `omp_num_threads` == 1
 
+### visualizer
+
+Open an LDMS CSV in a Matplotlib window with linked CPU and active-memory graphs.
+Entry point: `apps/visualizer/src/visualizer/cli.py`; command: `visualizer`.
+See [the viewer documentation](apps/visualizer/README.md).
+
 ## Setup
 
 ```bash
@@ -117,6 +123,8 @@ source .venv/bin/activate # for Linux and Mac
 # model: path to load model
 # input: path to the input deck you want to predict
 # particle-count: initial number of simulated particles
+
+(.venv) visualizer {path}
 ```
 
 See the [deck vector schema](doc/deck-vector-schema.md) for
@@ -138,6 +146,9 @@ classification rules and cutoff coverage.
 
 (.venv) modeling-prediction --model output/models/memory_model.joblib \
   --input data/input-decks/in.test --particle-count 256000
+
+(.venv) visualizer data/ldms/cpu_mpi_omp/binary_lj_032k_150k/10798767/ldms_metrics.csv
+(.venv) visualizer data/ldms/cpu_mpi_omp/lj_base_256k_160k/10849246/ldms_metrics.csv
 ```
 
 # Updates

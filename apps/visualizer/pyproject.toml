@@ -1,0 +1,9 @@
+[project]
+name = "visualizer"
+version = "0.1.0"
+dependencies = [
+  "matplotlib",
+]
+
+[project.scripts]
+visualizer = "visualizer.cli:main"

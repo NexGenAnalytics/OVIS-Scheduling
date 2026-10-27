@@ -19,6 +19,7 @@ jobs:
           - common
           - modeling-prediction
           - modeling-training
+          - visualizer
 
     steps:
       - uses: actions/checkout@v4
