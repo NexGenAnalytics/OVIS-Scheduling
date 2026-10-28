@@ -1,0 +1,40 @@
+# in.lj_base_256k_160k_split5
+# LJ melt run as five 32k-step segments.
+# Variant of lj_base_256k_160k: one run of 160k -> five runs of 32k (expected impact: negligible).
+
+units           lj
+atom_style      atomic
+boundary        p p p
+
+variable        nx equal 40
+variable        rho equal 0.8442
+variable        temp equal 1.0
+variable        rc equal 2.5
+variable        nsteps equal 160000
+variable        nseg equal ${nsteps}/5
+
+lattice         fcc ${rho}
+region          box block 0 ${nx} 0 ${nx} 0 ${nx}
+create_box      1 box
+create_atoms    1 box
+
+mass            1 1.0
+
+velocity        all create ${temp} 87287 loop geom
+
+pair_style      lj/cut ${rc}
+pair_coeff      1 1 1.0 1.0 ${rc}
+
+neighbor        0.3 bin
+neigh_modify    delay 0 every 1 check yes
+
+fix             1 all nve
+
+thermo          100
+thermo_style    custom step temp pe ke etotal press density
+
+run             ${nseg}
+run             ${nseg}
+run             ${nseg}
+run             ${nseg}
+run             ${nseg}

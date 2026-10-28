@@ -1,0 +1,38 @@
+# in.lj_vecramp_131k_600k_every10
+# LJ melt storing the fix vector history every 10 steps (10x slower memory growth).
+# Variant of lj_vecramp_131k_600k: fix vector interval 1 -> 10 (expected impact: high on memory, negligible on CPU).
+
+units           lj
+atom_style      atomic
+boundary        p p p
+
+variable        nx equal 32
+variable        rho equal 0.8442
+variable        temp equal 1.0
+variable        rc equal 2.5
+variable        vevery equal 10
+variable        nsteps equal 600000
+
+lattice         fcc ${rho}
+region          box block 0 ${nx} 0 ${nx} 0 ${nx}
+create_box      1 box
+create_atoms    1 box
+
+mass            1 1.0
+
+velocity        all create ${temp} 87287 loop geom
+
+pair_style      lj/cut ${rc}
+pair_coeff      1 1 1.0 1.0 ${rc}
+
+neighbor        0.3 bin
+neigh_modify    delay 0 every 1 check yes
+
+fix             1 all nve
+
+thermo          100
+thermo_style    custom step temp pe ke etotal press density
+compute         red all reduce ave vx vy vz fx fy fz x y z
+fix             hist all vector ${vevery} c_red[1] c_red[2] c_red[3] c_red[4] c_red[5] c_red[6] c_red[7] c_red[8] c_red[9] c_thermo_temp c_thermo_press[1] c_thermo_press[2] c_thermo_press[3] c_thermo_press[4] c_thermo_press[5] c_thermo_press[6]
+
+run             ${nsteps}
