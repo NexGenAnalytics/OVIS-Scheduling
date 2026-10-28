@@ -1,0 +1,37 @@
+# in.si_sw_110k_300k
+# 110,592-atom crystalline silicon, Stillinger-Weber, NVT 1000 K, metal units.
+# Anchor of the si family. Independent of the pair-potential decks (3-body potential). Writes its potential file at runtime.
+# Requires: MANYBODY
+
+units           metal
+atom_style      atomic
+boundary        p p p
+
+variable        nx equal 24
+variable        temp equal 1000.0
+variable        nsteps equal 300000
+
+print           "Si Si Si 2.1683 2.0951 1.80 21.0 1.20 -0.333333333333 7.049556277 0.6022245584 4.0 0.0 0.0" file si_sw_110k_300k.sw screen no
+
+lattice         diamond 5.431
+region          box block 0 ${nx} 0 ${nx} 0 ${nx}
+create_box      1 box
+create_atoms    1 box
+
+mass            1 28.0855
+
+pair_style      sw
+pair_coeff      * * si_sw_110k_300k.sw Si
+
+neighbor        1.0 bin
+neigh_modify    delay 0 every 1 check yes
+
+velocity        all create $(2.0*v_temp) 4928459 loop geom
+
+timestep        0.001
+fix             1 all nvt temp ${temp} ${temp} 0.1
+
+thermo          100
+thermo_style    custom step temp pe ke etotal press vol
+
+run             ${nsteps}

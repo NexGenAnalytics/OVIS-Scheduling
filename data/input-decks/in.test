@@ -1,0 +1,12 @@
+# in.test
+
+units           lj
+atom_style      atomic
+
+variable        nx equal 100
+variable        rho equal 0.1
+variable        temp equal 10.0
+variable        rc equal 10.0
+variable        nsteps equal 100000
+
+run             ${nsteps}

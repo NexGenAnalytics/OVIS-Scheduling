@@ -1,9 +1,0 @@
-[project]
-name = "database"
-version = "0.1.0"
-dependencies = [
-  "SQLAlchemy==2.0.51",
-]
-
-[project.scripts]
-database = "database.cli:main"

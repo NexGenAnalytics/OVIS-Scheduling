@@ -17,8 +17,8 @@ jobs:
       matrix:
         app:
           - common
-          - database
-          - hashing
+          - modeling-prediction
+          - modeling-training
 
     steps:
       - uses: actions/checkout@v4

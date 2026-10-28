@@ -1,0 +1,39 @@
+# in.ka_glass_256k_240k_x50
+# Kob-Andersen-type liquid at 50:50 composition.
+# Variant of ka_glass_256k_240k: B fraction 0.2 -> 0.5 (expected impact: low).
+
+units           lj
+atom_style      atomic
+boundary        p p p
+
+variable        nx equal 40
+variable        rho equal 1.2
+variable        tstart equal 1.0
+variable        tstop equal 1.0
+variable        xb equal 0.5
+variable        nsteps equal 240000
+
+lattice         fcc ${rho}
+region          box block 0 ${nx} 0 ${nx} 0 ${nx}
+create_box      2 box
+create_atoms    1 box
+set             type 1 type/fraction 2 ${xb} 51723
+
+mass            * 1.0
+
+velocity        all create ${tstart} 66137 loop geom
+
+pair_style      lj/cut 2.5
+pair_coeff      1 1 1.0 1.0 2.5
+pair_coeff      1 2 1.5 0.8 2.0
+pair_coeff      2 2 0.5 0.88 2.2
+
+neighbor        0.3 bin
+neigh_modify    delay 0 every 1 check yes
+
+fix             1 all nvt temp ${tstart} ${tstop} 0.5
+
+thermo          100
+thermo_style    custom step temp pe ke etotal press
+
+run             ${nsteps}
