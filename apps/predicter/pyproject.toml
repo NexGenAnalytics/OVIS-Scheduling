@@ -1,0 +1,7 @@
+[project]
+name = "predicter"
+version = "0.1.0"
+dependencies = []
+
+[project.scripts]
+predicter = "predicter.cli:main"

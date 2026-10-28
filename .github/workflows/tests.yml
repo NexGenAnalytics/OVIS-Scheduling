@@ -16,9 +16,10 @@ jobs:
       fail-fast: false
       matrix:
         app:
-          - common
           - database
-          - hashing
+          - hasher
+          - predicter
+          - visualizer
 
     steps:
       - uses: actions/checkout@v4

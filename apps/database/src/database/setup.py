@@ -6,7 +6,7 @@ from sqlalchemy import create_engine
 from sqlalchemy.engine import Engine
 from sqlalchemy.orm import DeclarativeBase, Session, sessionmaker
 
-DEFAULT = "sqlite:///data/output/db.sqlite3"
+DEFAULT = "sqlite:///outputs/db.sqlite3"
 
 class Base(DeclarativeBase):
   pass
