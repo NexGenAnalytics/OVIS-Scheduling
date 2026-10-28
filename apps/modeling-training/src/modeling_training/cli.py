@@ -1,6 +1,6 @@
 import argparse
 from .benchmark import (display_benchmark, run_benchmark, select_best_model)
-from common import (Feature, Metric, Simulation)
+from common import (DECK_FEATURE_NAMES, Feature, Metric, Simulation)
 from common import (parse_inputdeck, parse_runprofile)
 from .dataset import prepare_dataset
 from .evaluation import TARGET_NAMES, evaluate_predictions
@@ -113,6 +113,7 @@ def save_model(model: any, name: str) -> Path:
   directory.mkdir(parents=True, exist_ok=True)
 
   model_path = directory / f"{name}_model.joblib"
+  model.deck_feature_names_ = (*DECK_FEATURE_NAMES, "particle_count")
   joblib.dump(model, model_path)
 
   return model_path

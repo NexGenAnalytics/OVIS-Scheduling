@@ -8,6 +8,7 @@ from sklearn.ensemble import (
   HistGradientBoostingRegressor,
   RandomForestRegressor,
 )
+from sklearn.feature_selection import VarianceThreshold
 from sklearn.linear_model import Ridge
 from sklearn.multioutput import MultiOutputRegressor
 from sklearn.neural_network import MLPRegressor
@@ -41,7 +42,12 @@ def create_mlp() -> TransformedTargetRegressor:
     random_state=RANDOM_SEED
   )
   model = TransformedTargetRegressor(
-    regressor=make_pipeline(StandardScaler(), mlp_regressor),
+    regressor=make_pipeline(
+      # Fit on training data and reuse the same columns during prediction.
+      VarianceThreshold(),
+      StandardScaler(),
+      mlp_regressor,
+    ),
     transformer=StandardScaler(),
   )
   return model

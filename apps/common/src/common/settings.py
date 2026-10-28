@@ -76,7 +76,8 @@ def define_resource_settings(inputdeck: list[Feature]) -> tuple[list[float], lis
     if feature.command == "variable":
       update_variable(feature.arguments, variables)
       continue
-    arguments = [resolve_token(value, variables) or value for value in feature.arguments]
+    arguments = [str(number) if (number := resolve_scalar(value, variables)) is not None
+                 else resolve_token(value, variables) or value for value in feature.arguments]
     if feature.command == "atom_style" and arguments:
       atom_style = arguments
     elif feature.command == "atom_modify":

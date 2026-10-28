@@ -1,5 +1,5 @@
 import argparse
-from common import define_deck, parse_inputdeck
+from common import DECK_FEATURE_NAMES, define_deck, parse_inputdeck
 import joblib
 import numpy as np
 from pathlib import Path
@@ -30,6 +30,15 @@ def main() -> None:
   deck_vector.append(float(args.particle_count))
 
   X_new = np.asarray([deck_vector], dtype=float)
+
+  expected_schema = (*DECK_FEATURE_NAMES, "particle_count")
+  saved_schema = getattr(model, "deck_feature_names_", None)
+  if ((saved_schema is not None and tuple(saved_schema) != expected_schema)
+      or (saved_schema is None and getattr(model, "n_features_in_", None) != X_new.shape[1])):
+    raise ValueError(
+      "Model uses an incompatible deck feature schema. Retrain it with "
+      "modeling-training before predicting with the expanded DeckConcepts."
+    )
 
   predicted_values = model.predict(X_new)[0]
 

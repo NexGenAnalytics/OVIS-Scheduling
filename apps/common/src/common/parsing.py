@@ -9,7 +9,13 @@ def parse_inputdeck(content: str) -> list[Feature]:
   """
   features: list[Feature] = []
 
+  pending = ""
   for line_number, line in enumerate(content.splitlines(), start=1):
+    # LAMMPS joins lines ending in '&' before tokenizing the command.
+    if line.rstrip().endswith("&"):
+      pending += line.rstrip()[:-1] + " "
+      continue
+    line, pending = pending + line, ""
     try:
       tokens = shlex.split(line, comments=True, posix=True)
     except ValueError as error:
@@ -21,6 +27,8 @@ def parse_inputdeck(content: str) -> list[Feature]:
     feature = Feature(command = command, arguments = arguments)
     features.append(feature)
 
+  if pending:
+    raise ValueError("Unterminated input-deck continuation")
   return features
 
 def parse_runprofile(content: str) -> (list[Metric], float):

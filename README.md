@@ -120,7 +120,10 @@ source .venv/bin/activate # for Linux and Mac
 ```
 
 See the [deck vector schema](doc/deck-vector-schema.md) for
-classification rules and cutoff coverage.
+feature coverage, classification rules, and extraction limits. The expanded
+schema is shared by training and prediction; existing models need retraining.
+See the [feature validation comparison](doc/deck-feature-validation.md) for
+collision counts and before/after model errors.
 
 ## How to quit
 
@@ -140,12 +143,33 @@ classification rules and cutoff coverage.
   --input data/input-decks/in.test --particle-count 256000
 ```
 
+
+
+
+
+
+
+
+
 # Updates
 
 Oct. 22 2026:
 - Usable simulations: 117 -> 164
 - Distinct feature vectors: 58 -> 105
 - Training simulations: 81 -> 114
+
+Oct. 27 2026:
+- Usable simulations: 164
+- Distinct feature vectors: 105 -> 162
+- Training simulations: 114
+
+
+
+
+
+
+
+
 
 # Results
 
