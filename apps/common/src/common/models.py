@@ -46,4 +46,6 @@ class Simulation:
   # Number simulated particles (atoms, molecules)
   # that LAMMPS must process.
   particlecount: float
+  # Problem name from the manifest, e.g. "lj_base_256k_160k_seed".
+  name: str = ""
 

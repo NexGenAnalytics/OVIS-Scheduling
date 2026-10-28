@@ -98,6 +98,22 @@ Reference configuration are:
 - `ntasks_per_node` == 48
 - `omp_num_threads` == 1
 
+### similarity
+
+Finds the known runs most similar to a deck, separately for peak memory, peak
+CPU and duration, and predicts each from those neighbors. Similarity is defined
+by measured behavior: each distance is fitted to the runs' resource profiles.
+Duration is compared per atom-step, so a neighbor's runtime scales to the new
+deck's size.
+
+- `profile.py`: Measured profile and comparable targets per run
+- `distances.py`: `changed_params`, `euclidean`, `learned_weights`, `forest`
+- `evaluate.py`: Cross-validated neighbor and regressor errors
+- `index.py`: Saved index of known runs and nearest-neighbor queries
+
+Decks become features through a per-application converter
+(`common/converters.py`); LAMMPS is the only one so far.
+
 ## Setup
 
 ```bash
@@ -117,6 +133,12 @@ source .venv/bin/activate # for Linux and Mac
 # model: path to load model
 # input: path to the input deck you want to predict
 # particle-count: initial number of simulated particles
+
+(.venv) similarity evaluate --simu {path}
+# compare distances held out by deck and by family
+
+(.venv) similarity build --simu {path} --distance {forest|learned_weights|euclidean|changed_params}
+(.venv) similarity nearest --input {path} --particle-count {count} --k 3
 ```
 
 See the [deck vector schema](doc/deck-vector-schema.md) for
