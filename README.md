@@ -59,6 +59,7 @@ source .venv/bin/activate # for Linux and Mac
 (.venv) hasher # WIP
 
 (.venv) predicter --train data/
+# WIP, training neural network
 
 (.venv) visualizer --file [problem]/[job_id]/ldms_metrics.csv
 # Display graph.
