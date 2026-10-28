@@ -37,7 +37,8 @@ pair_coeff      1 2 1.0 1.0 ${rc_lj}
 kspace_style    pppm 1.0e-4
 
 neighbor        0.3 bin
-neigh_modify    delay 0 every 1 check yes
+# rc_coul 10 gives ~2000 half-list neighbors per atom, above the default per-atom cap of 2000.
+neigh_modify    delay 0 every 1 check yes one 5000
 
 fix             1 all nve
 

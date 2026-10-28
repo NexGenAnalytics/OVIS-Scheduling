@@ -15,7 +15,10 @@ import yaml
 
 ACCOUNT = "fy250066"
 PARTITION = "batch"
-METRICS = ["mem_active_kb", "cpu_cores_used"]
+METRICS = [
+    "mem_active_kb", "mem_anon_kb", "mem_anon_huge_kb", "mem_shmem_kb", "mem_used_kb",
+    "mem_kernel_kb", "mem_committed_kb", "mem_cached_kb", "cpu_cores_used",
+]
 
 REPO = Path(__file__).resolve().parents[1]
 DECKS_DIR = REPO / "data" / "input-decks" / "lammps"
@@ -25,7 +28,7 @@ RUNNER = REPO / "scripts" / "run.sh"
 RECORDER = REPO / "scripts" / "record_particles.py"
 ROOT = Path("/gpfs/cwschil/Scheduling")
 
-PLAN_KEYS = {"build", "nodes", "ntasks_per_node", "omp_num_threads", "time"}
+PLAN_KEYS = {"build", "nodes", "ntasks_per_node", "omp_num_threads", "time", "repeats"}
 
 
 def hours(walltime):
@@ -55,7 +58,9 @@ def resolve_jobs(defaults, overrides, problems):
             job["ntasks"] = job["nodes"] * job["ntasks_per_node"]
             if isinstance(job["time"], int):  # YAML reads unquoted 12:00:00 as base-60 seconds
                 job["time"] = "{}:{:02d}:{:02d}".format(job["time"] // 3600, job["time"] // 60 % 60, job["time"] % 60)
-            jobs.append(job)
+            # Repeated runs of one entry measure run-to-run noise; each gets its own run directory.
+            repeats = job.pop("repeats", 1)
+            jobs.extend({**job, "repeat": index} if repeats > 1 else job for index in range(repeats))
     return jobs
 
 
@@ -69,6 +74,8 @@ def select(jobs, patterns, max_time):
 
 def run_dir(job, root, stamp):
     tag = f"{stamp}_{job['nodes']}n{job['ntasks_per_node']}p{job['omp_num_threads']}t"
+    if "repeat" in job:
+        tag += f"_r{job['repeat']}"
     return root / "runs" / job["build"] / job["problem"] / tag
 
 
@@ -82,6 +89,8 @@ def sbatch_cmd(job, rundir, root):
         "--nodes", str(job["nodes"]),
         "--ntasks-per-node", str(job["ntasks_per_node"]),
         "--cpus-per-task", str(job["omp_num_threads"]),
+        # Node-wide LDMS metrics are only attributable to this job if no other job shares the node.
+        "--exclusive",
         "--time", job["time"],
         "--chdir", str(rundir),
         "--output", "slurm-%j.out",

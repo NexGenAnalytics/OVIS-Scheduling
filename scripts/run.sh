@@ -6,6 +6,9 @@ set -euo pipefail
 module purge
 module load aue/gcc/12.3.0 aue/openmpi/4.1.6-gcc-12.3.0
 
+# Decks that read stock potential files (e.g. Cu_u3.eam) find them in the install's potentials directory.
+export LAMMPS_POTENTIALS="${LAMMPS_POTENTIALS:-$(dirname "${LMP}")/../share/lammps/potentials}"
+
 export OMP_NUM_THREADS="${SLURM_CPUS_PER_TASK:-1}"
 export SRUN_CPUS_PER_TASK="${OMP_NUM_THREADS}"  # srun no longer inherits --cpus-per-task (Slurm >= 22.05)
 omp_args=()

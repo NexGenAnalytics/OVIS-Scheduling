@@ -30,6 +30,12 @@ RESOURCE_COLUMNS = [
 ]
 MANIFEST_COLUMNS = ["build", "problem", *RESOURCE_COLUMNS]
 SUMMARY_COLUMNS = ["job_id", *MANIFEST_COLUMNS, "components", "rows", "out_csv", "status"]
+BASELINE_COLUMNS = ["job_id", "component_id", "metric", "unit", "value", "samples"]
+
+# LDMS tags samples taken while no job runs on the node with this job_id.
+IDLE_JOB_ID = 0
+# How far before the job starts (or after it ends) idle samples count toward the node baseline.
+BASELINE_WINDOW_S = 600.0
 
 # Turns one component's time-ordered samples into the metric's value column.
 Deriver = Callable[[pd.DataFrame], pd.Series]
@@ -45,9 +51,14 @@ class MetricSpec(NamedTuple):
     unit: str
 
 
-def gauge(column: str) -> Deriver:
-    """Read a column that already holds the value, such as memory in use."""
-    return lambda df: df[column].astype(float)
+def gauge(*columns: str) -> Deriver:
+    """Read columns that already hold the value, such as memory in use, summing them if several."""
+    return lambda df: sum(df[column].astype(float) for column in columns)
+
+
+def difference(minuend: str, subtrahend: str) -> Deriver:
+    """Subtract one gauge column from another, such as MemTotal - MemAvailable."""
+    return lambda df: df[minuend].astype(float) - df[subtrahend].astype(float)
 
 
 def rate(*columns: str, scale: float = 1.0) -> Deriver:
@@ -61,6 +72,14 @@ def rate(*columns: str, scale: float = 1.0) -> Deriver:
 # Add a metric by adding a row here; nothing downstream needs to change.
 METRICS: Dict[str, MetricSpec] = {
     "mem_active_kb": MetricSpec(MEM_SCHEMA, ("Active",), gauge("Active"), "kB"),
+    # Node-wide meminfo: anon + shmem approximates the job's resident memory on an exclusive node.
+    "mem_anon_kb": MetricSpec(MEM_SCHEMA, ("AnonPages",), gauge("AnonPages"), "kB"),
+    "mem_anon_huge_kb": MetricSpec(MEM_SCHEMA, ("AnonHugePages",), gauge("AnonHugePages"), "kB"),
+    "mem_shmem_kb": MetricSpec(MEM_SCHEMA, ("Shmem",), gauge("Shmem"), "kB"),
+    "mem_used_kb": MetricSpec(MEM_SCHEMA, ("MemTotal", "MemAvailable"), difference("MemTotal", "MemAvailable"), "kB"),
+    "mem_kernel_kb": MetricSpec(MEM_SCHEMA, ("PageTables", "SUnreclaim"), gauge("PageTables", "SUnreclaim"), "kB"),
+    "mem_committed_kb": MetricSpec(MEM_SCHEMA, ("Committed_AS",), gauge("Committed_AS"), "kB"),
+    "mem_cached_kb": MetricSpec(MEM_SCHEMA, ("Cached",), gauge("Cached"), "kB"),
     # procstat counts USER_HZ jiffies, so a scale of 100 gives cores in use.
     "cpu_cores_used": MetricSpec(CPU_SCHEMA, ("user", "sys"), rate("user", "sys", scale=100.0), "cores"),
 }
@@ -167,6 +186,44 @@ def collect_job(query: QueryFn, job_id: int, metrics: Iterable[str]) -> pd.DataF
     return tidy[TIDY_COLUMNS]
 
 
+def build_node_select(columns: Iterable[str], component_id: int) -> str:
+    columns = ", ".join(("timestamp", "job_id", *columns))
+    return f"select {columns} from {MEM_SCHEMA} where component_id == {component_id} order_by comp_time_job"
+
+
+def idle_window(node: pd.DataFrame, start: float, end: float) -> pd.DataFrame:
+    """Idle samples just before the job, or just after it when the node was busy beforehand."""
+    idle = node[node["job_id"].astype(int) == IDLE_JOB_ID]
+    before = idle[(idle["timestamp"] >= start - BASELINE_WINDOW_S) & (idle["timestamp"] < start)]
+    if not before.empty:
+        return before
+    return idle[(idle["timestamp"] > end) & (idle["timestamp"] <= end + BASELINE_WINDOW_S)]
+
+
+def collect_baseline(query: QueryFn, job_id: int, tidy: pd.DataFrame, metrics: Iterable[str]) -> pd.DataFrame:
+    """Median idle-node value of each memory metric, per component, to subtract from the job's samples."""
+    memory = [name for name in metrics if METRICS[name].schema == MEM_SCHEMA]
+    columns = sorted({column for name in memory for column in METRICS[name].columns})
+    rows = []
+
+    for component_id, samples in tidy.groupby("component_id"):
+        node = query(build_node_select(columns, component_id)) if memory else pd.DataFrame()
+        if node.empty:
+            continue
+        node["timestamp"] = timestamp_to_seconds(node["timestamp"])
+        window = idle_window(node, samples["timestamp"].min(), samples["timestamp"].max())
+        if window.empty:
+            print(f"No idle samples within {BASELINE_WINDOW_S:.0f} s of job {job_id} on component {component_id}")
+            continue
+        for name in memory:
+            spec = METRICS[name]
+            value = float(spec.derive(window).median())
+            rows.append({"job_id": job_id, "component_id": component_id, "metric": name,
+                         "unit": spec.unit, "value": value, "samples": len(window)})
+
+    return pd.DataFrame(rows, columns=BASELINE_COLUMNS)
+
+
 def manifest_fields(job_cfg: dict) -> dict:
     return {column: job_cfg.get(column, "") for column in MANIFEST_COLUMNS}
 
@@ -204,6 +261,12 @@ def process_job(query: QueryFn, job_id: int, job_cfg: dict, metrics: List[str], 
     out_csv.parent.mkdir(parents=True, exist_ok=True)
     tidy.to_csv(out_csv, index=False)
     print(f"Wrote {out_csv} ({len(tidy)} rows)")
+
+    baseline = collect_baseline(query, job_id, tidy, metrics)
+    if not baseline.empty:
+        baseline_csv = out_csv.with_name("ldms_baseline.csv")
+        baseline.to_csv(baseline_csv, index=False)
+        print(f"Wrote {baseline_csv} ({len(baseline)} rows)")
 
     return summarize(job_id, job_cfg, tidy, out_csv, "ok")
 
