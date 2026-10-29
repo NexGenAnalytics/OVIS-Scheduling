@@ -1,7 +1,10 @@
 import unittest
 
-class TestTODO(unittest.TestCase):
+from visualizer.metrics import max_value
 
-  def my_first_test(self) -> None:
-    gold = 12
-    self.assertEqual(12, gold)
+class TestMetrics(unittest.TestCase):
+
+  def test_max_value(self) -> None:
+    rows = [12, 100, 1, 4, 8]
+    gold = 100
+    self.assertEqual(max_value(rows), gold)
