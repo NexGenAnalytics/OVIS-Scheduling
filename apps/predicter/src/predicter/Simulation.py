@@ -1,5 +1,7 @@
 from dataclasses import dataclass
 
+from .Feature import Feature
+
 @dataclass(frozen=True)
 class Simulation:
   id: int
@@ -7,5 +9,5 @@ class Simulation:
   maxcpu: int # cores
   maxmemory: int # kB
   totaltime: int # seconds
-  #inputdeck: list[Feature]
+  inputdeck: list[Feature]
   #runprofile: list[Metric]

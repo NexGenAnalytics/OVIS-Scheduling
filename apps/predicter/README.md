@@ -73,3 +73,19 @@ flowchart LR
     B --> C["Tree 2 correction: −1"]
     C --> D["Final prediction: 12"]
 ```
+
+# Architecture
+
+```
+*cli.py*
+-> load_datas
+---> parse_inputdeck / *parsing.py*
+---> filter_metric / *visualizer.metrics*
+---> max_value / *visualizer.metrics*
+-> split_set
+-> prepare_dataset / *prepare.py*
+---> define_deck / *decker.py*
+-> run_benchmark / *benchmark.py*
+---> evaluate_predictions / *evaluation.py*
+
+```

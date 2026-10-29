@@ -1,10 +1,15 @@
 import argparse
 import csv
+import numpy as np
 
 from pathlib import Path
 
 from .benchmark import run_benchmark
+
+from .Feature import Feature
 from .models import RANDOM_SEED
+from .parsing import parse_inputdeck
+from .prepare import prepare_dataset
 from .Simulation import Simulation
 
 from visualizer.metrics import max_value, filter_metric
@@ -49,6 +54,9 @@ def load_datas(path: Path) -> list[Simulation]:
       path_inputdeck = path_inputdecks / filename
       path_profile = path_profiles / problem / job_id / "ldms_metrics.csv"
 
+      inputdeck_str: str = path_inputdeck.read_text(encoding="utf-8")
+      inputdeckcontent: list[Feature] = parse_inputdeck(inputdeck_str)
+
       with open(path_profile, newline="") as file:
         rows = list(csv.DictReader(file))
 
@@ -68,17 +76,18 @@ def load_datas(path: Path) -> list[Simulation]:
         name = problem,
         maxcpu = int(max_cpu), # cores
         maxmemory = int(max_memory), # kB
-        totaltime = int(total_time) # seconds
+        totaltime = int(total_time), # seconds
+        inputdeck = inputdeckcontent,
       )
-      print(simulation)
+      # print(simulation)
       simulations.append(simulation)
 
   print(f"> {len(simulations)} file(s) loaded")
   return simulations
 
-def split_set(simulations: list[Simulation]) -> tuple[
-  list[Simulation], list[Simulation], list[Simulation]
-]:
+def split_set(
+  simulations: list[Simulation]
+) -> tuple[list[Simulation], list[Simulation], list[Simulation]]:
   """
   Train / Validation / Test => 70% / 20% / 10%
   """
@@ -99,11 +108,13 @@ def main() -> None:
   sims = load_datas(args.train)
   training_set, validation_set, testing_set = split_set(sims)
 
-  for resource, metric_name in RESOURCE_METRICS.items():
+  for resource, metric in RESOURCE_METRICS.items():
     print(f"\n---------------- RESOURCE: {resource} ----------------")
 
-    run_benchmark()
+    X_train, y_train = prepare_dataset(training_set, metric)
+    X_validation, y_validation = prepare_dataset(validation_set, metric)
 
+    run_benchmark(X_train, y_train, X_validation, y_validation)
 
 
   # move here code from https://github.com/NexGenAnalytics/OVIS-Scheduling/pull/44/changes
