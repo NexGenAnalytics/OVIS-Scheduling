@@ -1,7 +1,9 @@
 [project]
 name = "predicter"
 version = "0.1.0"
-dependencies = []
+dependencies = [
+  "scikit-learn==1.9.0",
+]
 
 [project.scripts]
 predicter = "predicter.cli:main"

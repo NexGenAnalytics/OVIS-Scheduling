@@ -58,10 +58,10 @@ source .venv/bin/activate # for Linux and Mac
 
 (.venv) hasher # WIP
 
-(.venv) predicter --train data/
-# WIP, training neural network
+(.venv) predicter --train data/ # WIP
+# Training neural network.
 
-(.venv) scheduler
+(.venv) scheduler # WIP
 # List some code to update: starting with '_'.
 
 (.venv) visualizer --file [problem]/[job_id]/ldms_metrics.csv
