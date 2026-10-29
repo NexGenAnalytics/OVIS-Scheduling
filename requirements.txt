@@ -1,4 +1,5 @@
 -e apps/database
 -e apps/hasher
 -e apps/predicter
+-e apps/scheduler
 -e apps/visualizer

@@ -61,6 +61,9 @@ source .venv/bin/activate # for Linux and Mac
 (.venv) predicter --train data/
 # WIP, training neural network
 
+(.venv) scheduler
+# List some code to update: starting with '_'.
+
 (.venv) visualizer --file [problem]/[job_id]/ldms_metrics.csv
 # Display graph.
 ```

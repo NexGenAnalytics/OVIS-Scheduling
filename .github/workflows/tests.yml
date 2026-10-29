@@ -19,6 +19,7 @@ jobs:
           - database
           - hasher
           - predicter
+          - scheduler
           - visualizer
 
     steps:
