@@ -1,17 +1,27 @@
 
 from .Feature import Feature
 
-def define_deck(inputdeck: list[Feature]) -> list[float]:
-  results = []
+def numeric_features(inputdeck: list[Feature]) -> dict[str, float]:
+  values = {}
+
   for feature in inputdeck:
     match feature.command:
       case "units" | "atom_style":
-        # TODO!!!
-        print(f"TODO: {feature}")
-      case "thermo" | "timestep":
-        value = float(feature.arguments[0])
-        results.append(value)
+        continue  # Encode categorical features separately later.
       case _:
-        value = float(feature.arguments)
-        results.append(value)
-  return results
+        arguments = feature.arguments
+        raw = arguments[0] if isinstance(arguments, list) else arguments
+        values[feature.command] = float(raw)
+
+  return values
+
+def define_deck(
+  inputdeck: list[Feature],
+  columns: list[str]
+) -> list[float]:
+  values = numeric_features(inputdeck)
+
+  numeric = [values.get(name, 0.0) for name in columns]
+  present = [float(name in values) for name in columns]
+
+  return numeric + present

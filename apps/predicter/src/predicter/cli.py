@@ -5,7 +5,7 @@ import numpy as np
 from pathlib import Path
 
 from .benchmark import run_benchmark
-
+from .decker import numeric_features
 from .Feature import Feature
 from .models import RANDOM_SEED
 from .parsing import parse_inputdeck
@@ -79,7 +79,6 @@ def load_datas(path: Path) -> list[Simulation]:
         totaltime = int(total_time), # seconds
         inputdeck = inputdeckcontent,
       )
-      # print(simulation)
       simulations.append(simulation)
 
   print(f"> {len(simulations)} file(s) loaded")
@@ -106,13 +105,25 @@ def main() -> None:
 
   args: argparse.Namespace = init_parser()
   sims = load_datas(args.train)
+  print("Split into:")
   training_set, validation_set, testing_set = split_set(sims)
+  print(f"> {len(training_set)} file(s) for training")
+  print(f"> {len(validation_set)} file(s) for validation")
+  print(f"> {len(testing_set)} file(s) for testing")
 
   for resource, metric in RESOURCE_METRICS.items():
     print(f"\n---------------- RESOURCE: {resource} ----------------")
 
-    X_train, y_train = prepare_dataset(training_set, metric)
-    X_validation, y_validation = prepare_dataset(validation_set, metric)
+    # discover the columns automatically
+    columns = sorted({
+      name for simulation in training_set
+      for name in numeric_features(simulation.inputdeck)
+    })
+    print(f"> {len(columns)} column(s) discovered: {columns[:3]} ...")
+
+    X_train, y_train = prepare_dataset(training_set, metric, columns)
+    print(f"> {len(X_train[0])} column(s) total (numeric + present)")
+    X_validation, y_validation = prepare_dataset(validation_set, metric, columns)
 
     run_benchmark(X_train, y_train, X_validation, y_validation)
 
