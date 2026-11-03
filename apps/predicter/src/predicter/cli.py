@@ -5,14 +5,17 @@ from common.metrics import RESOURCE_METRICS
 from common.Simulation import Simulation
 from .decker import numeric_features
 from .models import RANDOM_SEED
-import numpy as np
 from pathlib import Path
 from .prepare import prepare_dataset
 from sklearn.model_selection import train_test_split
 
 def init_parser() -> argparse.Namespace:
-  parser = argparse.ArgumentParser(prog="TODO")
-  parser.add_argument("--train", type=Path, required=True)
+  parser = argparse.ArgumentParser(description="TODO")
+
+  commands = parser.add_mutually_exclusive_group(required=True)
+  commands.add_argument("--train", metavar="Path")
+  commands.add_argument("--predict", metavar="Path")
+
   args = parser.parse_args()
   return args
 
@@ -32,11 +35,8 @@ def split_set(
   )
   return training_set, validation_set, testing_set
 
-def main() -> None:
-  print("P, start")
-
-  args: argparse.Namespace = init_parser()
-  sims: list[Simulation] = load_simulations(args.train, True) # debug is True
+def define_train(path: Path):
+  sims: list[Simulation] = load_simulations(path, True) # debug is True
 
   print("Split into:")
   training_set, validation_set, testing_set = split_set(sims)
@@ -56,14 +56,42 @@ def main() -> None:
 
     X_train, y_train = prepare_dataset(training_set, metric, columns)
     print(f"> {len(X_train[0])} column(s) total (numeric + present)")
-    X_validation, y_validation = prepare_dataset(validation_set, metric, columns)
+    X_validation, y_validation = prepare_dataset(
+      validation_set, metric, columns)
 
-    run_benchmark(X_train, y_train, X_validation, y_validation)
+    results: list[ModelBenchmark] = run_benchmark(
+      X_train, y_train, X_validation, y_validation)
+    display_benchmark(results)
+
+    # TODO: best_result = select_best_model(results)
+    # TODO: print(f"Selected model: {best_result.name}")
+
+    # Test
+    X_test, y_test = prepare_dataset(testing_set, metric, columns)
+    # TODO: test_predictions = best_result.model.predict(X_test)
+    # TODO: test_scores = evaluate_predictions(y_test, test_predictions)
+
+    # Save model
+    # TODO: model_path = save_model(best_result.model, resource)
+    # TODO: print(f"Saved {best_result.name} to {model_path}")
+
+    # TODO: Draw graph x = y
 
 
-  # move here code from https://github.com/NexGenAnalytics/OVIS-Scheduling/pull/44/changes
-  # store (id job, max cpu, max memory, input decks features)
-  # train NN
-  # predict (max cpu, max memory)
+def define_predict(path: str):
+  # TODO
+  print("TODO, incoming")
+
+
+def main() -> None:
+  print("P, start")
+
+  args: argparse.Namespace = init_parser()
+
+  match vars(args):
+    case {"train": str(path_train)}:
+      define_train(Path(path_train))
+    case {"predict": str(path_predict)}:
+      define_predict(path_predict)
 
   print("P, end")

@@ -76,16 +76,17 @@ flowchart LR
 
 # Architecture
 
+`cli.py`:
 ```
-*cli.py*
--> load_datas
----> parse_inputdeck / *parsing.py*
----> filter_metric / *visualizer.metrics*
----> max_value / *visualizer.metrics*
+-> init_parser
+-> load_simulations                                     # common.loading
+----> parse_inputdeck                                   # common.parsing
+----> load_one_simulation                               # common.loading
 -> split_set
--> prepare_dataset / *prepare.py*
----> define_deck / *decker.py*
--> run_benchmark / *benchmark.py*
----> evaluate_predictions / *evaluation.py*
-
+-> numeric_features                                     # predicter.decker
+-> prepare_dataset                                      # predicter.prepare
+----> define_deck                                       # predicter.decker
+-> run_benchmark                                        # predicter.benchmark
+----> evaluate_predictions                              # predicter.evaluation
+-> display_benchmark                                    # predicter.benchmark
 ```

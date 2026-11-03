@@ -1,4 +1,3 @@
-
 from common.Feature import Feature
 
 def numeric_features(inputdeck: list[Feature]) -> dict[str, float]:

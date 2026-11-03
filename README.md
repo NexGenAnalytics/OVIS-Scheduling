@@ -35,6 +35,9 @@ source .venv/bin/activate # for Linux and Mac
 (.venv) predicter --train data/ # WIP
 # Training neural network.
 
+(.venv) predicter --predict data/lammps_input_decks/in.[problem] # WIP
+# Use best model to make a prediction.
+
 (.venv) scheduler # WIP
 # List some code to update: starting with '_'.
 

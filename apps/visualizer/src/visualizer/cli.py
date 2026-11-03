@@ -5,9 +5,7 @@ from .histogram import display_histogram
 
 from visualizer.metrics import max_value, filter_metric
 
-def main() -> None:
-  print("V, start")
-
+def define_args():
   parser = argparse.ArgumentParser(description="Plot CPU and memory usage.")
 
   commands = parser.add_mutually_exclusive_group(required=True)
@@ -19,6 +17,12 @@ def main() -> None:
     "--hcpu", dest="histogram_cpu", action="store_true")
 
   args = parser.parse_args()
+  return args
+
+def main() -> None:
+  print("V, start")
+
+  args = define_args()
 
   match vars(args):
     case {"file": str(path_file)}:
