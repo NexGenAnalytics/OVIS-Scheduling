@@ -38,6 +38,12 @@ source .venv/bin/activate # for Linux and Mac
 (.venv) scheduler # WIP
 # List some code to update: starting with '_'.
 
+(.venv) visualizer --hmemory
+# Max memory histogram.
+
+(.venv) visualizer --hcpu
+# Max CPU histogram.
+
 (.venv) visualizer --file [problem]/[job_id]/ldms_metrics.csv
 # Display graph.
 ```
