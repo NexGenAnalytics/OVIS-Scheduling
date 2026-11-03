@@ -1,7 +1,7 @@
 import argparse
-import csv
 
-import matplotlib.pyplot as plt
+from .filegraph import display_graph
+from .histogram import display_histogram
 
 from visualizer.metrics import max_value, filter_metric
 
@@ -9,47 +9,24 @@ def main() -> None:
   print("V, start")
 
   parser = argparse.ArgumentParser(description="Plot CPU and memory usage.")
-  parser.add_argument("--file", required=True, metavar="PATH")
+
+  commands = parser.add_mutually_exclusive_group(required=True)
+  commands.add_argument(
+    "--file", metavar="PATH", help="Plot one run over time.")
+  commands.add_argument(
+    "--hmemory", dest="histogram_memory", action="store_true")
+  commands.add_argument(
+    "--hcpu", dest="histogram_cpu", action="store_true")
+
   args = parser.parse_args()
 
-  with open(args.file, newline="") as file:
-    rows = list(csv.DictReader(file))
-
-  cpu = filter_metric(rows, "cpu_cores_used")
-  memory = filter_metric(rows, "mem_active_kb")
-
-  cpu_values = [float(row["value"]) for row in cpu]
-  memory_values = [float(row["value"]) for row in memory]
-
-  max_cpu = max_value(cpu_values)
-  max_memory = max_value(memory_values)
-
-  fig, axes = plt.subplots(2, 1, sharex=True)
-
-  axes[0].plot(
-    [float(row["time_rel_s"]) for row in cpu],
-    cpu_values,
-  )
-  axes[0].axhline(
-    max_cpu, color="red", linestyle="--",
-    label=f"Max: {max_cpu:.2f} cores",
-  )
-  axes[0].set_ylabel("CPU (cores)")
-  axes[0].legend()
-
-  axes[1].plot(
-    [float(row["time_rel_s"]) for row in memory],
-    memory_values,
-  )
-  axes[1].axhline(
-    max_memory, color="red", linestyle="--",
-    label=f"Max: {max_memory:.0f} kB",
-  )
-  axes[1].set_ylabel("Memory (kB)")
-  axes[1].set_xlabel("Time (seconds)")
-  axes[1].legend()
-
-  plt.tight_layout()
-  plt.show()
+  match vars(args):
+    case {"file": str(path_file)}:
+      print(path_file)
+      display_graph(path_file)
+    case {"histogram_memory": True}:
+      display_histogram("memory")
+    case {"histogram_cpu": True}:
+      display_histogram("cpu")
 
   print("V, end")
