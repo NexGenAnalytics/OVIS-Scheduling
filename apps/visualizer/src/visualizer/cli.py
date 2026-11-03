@@ -22,7 +22,6 @@ def main() -> None:
 
   match vars(args):
     case {"file": str(path_file)}:
-      print(path_file)
       display_graph(path_file)
     case {"histogram_memory": True}:
       display_histogram("memory")

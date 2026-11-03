@@ -1,3 +1,4 @@
+from common.loading import load_one_simulation
 import csv
 import matplotlib.pyplot as plt
 from pathlib import Path
@@ -8,24 +9,19 @@ def display_graph(path_file: str):
   path: Path = Path("data")
   path_file = path / "lammps_results" / path_file
 
-  with open(path_file, newline="") as file:
-    rows = list(csv.DictReader(file))
+  # Loading
+  cpu_values, memory_values, cpu_times, memory_times = (
+    load_one_simulation(path_file)
+  )
 
-  cpu = filter_metric(rows, "cpu_cores_used")
-  memory = filter_metric(rows, "mem_active_kb")
-
-  cpu_values = [float(row["value"]) for row in cpu]
-  memory_values = [float(row["value"]) for row in memory]
-
+  # Computation
   max_cpu = max_value(cpu_values)
-  max_memory = max_value(memory_values)
+  max_memory = max_value(memory_values) # kB
 
+  # Figure and plot
   fig, axes = plt.subplots(2, 1, sharex=True)
 
-  axes[0].plot(
-    [float(row["time_rel_s"]) for row in cpu],
-    cpu_values,
-  )
+  axes[0].plot(cpu_times, cpu_values)
   axes[0].axhline(
     max_cpu, color="red", linestyle="--",
     label=f"Max: {max_cpu:.2f} cores",
@@ -33,10 +29,7 @@ def display_graph(path_file: str):
   axes[0].set_ylabel("CPU (cores)")
   axes[0].legend()
 
-  axes[1].plot(
-    [float(row["time_rel_s"]) for row in memory],
-    memory_values,
-  )
+  axes[1].plot(memory_times, memory_values)
   axes[1].axhline(
     max_memory, color="red", linestyle="--",
     label=f"Max: {max_memory:.0f} kB",

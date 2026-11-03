@@ -1,4 +1,6 @@
+from common.loading import load_simulations
 from common.metrics import RESOURCE_METRICS
+from common.Simulation import Simulation
 import csv
 import math
 import matplotlib.pyplot as plt
@@ -7,58 +9,17 @@ from pathlib import Path
 from visualizer.metrics import max_value, filter_metric
 
 def display_histogram(metric: str):
-
   path: Path = Path("data")
+  simulations: list[Simulation] = load_simulations(path)
 
-  # TODO, its like load data in predicter, maybe create a common
-  # load data
-  simulations = []
-  path_manifest = path / "lammps_results" / "summary.csv"
-  path_inputdecks = path / "lammps_input_decks"
-  path_profiles = path / "lammps_results"
-
-  with path_manifest.open(newline="", encoding="utf-8") as csv_file:
-    reader = csv.DictReader(csv_file)
-    rows = list(reader)
-
-    for row in rows:
-      status = row["status"]
-
-      if row["status"] != "ok": continue
-
-      job_id = row["job_id"]
-      problem = row["problem"]
-      filename = f"in.{problem}"
-
-      path_inputdeck = path_inputdecks / filename
-      path_profile = path_profiles / problem / job_id / "ldms_metrics.csv"
-
-      with open(path_profile, newline="") as file:
-        rows = list(csv.DictReader(file))
-
-      cpu = filter_metric(rows, RESOURCE_METRICS["cpu"])
-      memory = filter_metric(rows, RESOURCE_METRICS["memory"])
-
-      cpu_values = [float(row["value"]) for row in cpu]
-      memory_values = [float(row["value"]) for row in memory]
-
-      max_cpu = max_value(cpu_values)
-      max_memory = max_value(memory_values) # kB
-      max_memory_MB = max_memory / 1000 # MB
-
-      simulation = {
-        "id": int(job_id),
-        "name": problem,
-        "maxcpu": int(max_cpu), # cores
-        "maxmemory": int(max_memory_MB) # MB
-      }
-      simulations.append(simulation)
-
+  # Compute data
   if metric == "memory":
-    values = np.array([sim["maxmemory"] for sim in simulations])
+    values = np.array([
+      sim.maxmemory / 1000 # from kB to MB
+      for sim in simulations])
     units = "MB"
   else:
-    values = np.array([sim["maxcpu"] for sim in simulations])
+    values = np.array([sim.maxcpu for sim in simulations])
     units = "cores"
 
   val_min = values.min()
@@ -76,7 +37,7 @@ def display_histogram(metric: str):
   median = float(np.median(values))
   p95 = float(np.percentile(values, 95))
 
-  # ===========> drawing
+  # Figure and plot
   fig, axes = plt.subplots(figsize=(10, 6))
 
   axes.hist(
