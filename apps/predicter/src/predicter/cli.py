@@ -1,5 +1,6 @@
 import argparse
 from common.Feature import Feature
+from common.metrics import RESOURCE_METRICS
 from common.Simulation import Simulation
 import csv
 import numpy as np
@@ -8,20 +9,14 @@ from pathlib import Path
 
 from .benchmark import run_benchmark
 from .decker import numeric_features
-from .Feature import Feature
 from .models import RANDOM_SEED
 from .parsing import parse_inputdeck
 from .prepare import prepare_dataset
-from .Simulation import Simulation
 
 from visualizer.metrics import max_value, filter_metric
 
 from sklearn.model_selection import train_test_split
 
-RESOURCE_METRICS = {
-  "cpu": "cpu_cores_used",
-  "memory": "mem_active_kb",
-}
 
 def init_parser() -> argparse.Namespace:
   parser = argparse.ArgumentParser(prog="TODO")

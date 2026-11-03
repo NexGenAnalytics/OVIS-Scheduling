@@ -1,15 +1,10 @@
+from common.metrics import RESOURCE_METRICS
 import csv
 import math
 import matplotlib.pyplot as plt
 import numpy as np
 from pathlib import Path
 from visualizer.metrics import max_value, filter_metric
-
-# TODO, its like load data in predicter, maybe create a common
-RESOURCE_METRICS = {
-  "cpu": "cpu_cores_used",
-  "memory": "mem_active_kb",
-}
 
 def display_histogram(metric: str):
 
