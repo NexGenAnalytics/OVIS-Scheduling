@@ -1,6 +1,5 @@
+from common.Feature import Feature
 import shlex
-
-from .Feature import Feature
 
 def parse_inputdeck(content: str) -> list[Feature]:
   features: list[Feature] = []

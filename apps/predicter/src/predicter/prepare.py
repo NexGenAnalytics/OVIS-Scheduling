@@ -1,7 +1,6 @@
-import numpy as np
-
+from common.Simulation import Simulation
 from .decker import define_deck
-from .Simulation import Simulation
+import numpy as np
 
 def prepare_dataset(
   simulations: list[Simulation], metric: str, columns: list[str]

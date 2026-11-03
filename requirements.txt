@@ -1,3 +1,4 @@
+-e apps/common
 -e apps/database
 -e apps/hasher
 -e apps/predicter

@@ -1,4 +1,6 @@
 import argparse
+from common.Feature import Feature
+from common.Simulation import Simulation
 import csv
 import numpy as np
 
@@ -109,10 +111,10 @@ def main() -> None:
   training_set, validation_set, testing_set = split_set(sims)
   print(f"> {len(training_set)} file(s) for training")
   print(f"> {len(validation_set)} file(s) for validation")
-  print(f"> {len(testing_set)} file(s) for testing")
+  print(f"> {len(testing_set)} file(s) for testing\n")
 
   for resource, metric in RESOURCE_METRICS.items():
-    print(f"\n---------------- RESOURCE: {resource} ----------------")
+    print(f"-> RESOURCE: {resource}")
 
     # discover the columns automatically
     columns = sorted({
