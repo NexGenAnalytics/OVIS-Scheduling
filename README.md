@@ -32,11 +32,12 @@ source .venv/bin/activate # for Linux and Mac
 
 (.venv) hasher # WIP
 
-(.venv) predicter --train data/ # WIP
-# Training neural network.
+(.venv) predicter --train data/
+# Training neural network, save best model, display graphs.
 
-(.venv) predicter --predict data/lammps_input_decks/in.[problem] # WIP
+(.venv) predicter --predict data/lammps_input_decks/in.[problem]
 # Use best model to make a prediction.
+# predicter --predict data/lammps_input_decks/in.binary_lj_032k_150k
 
 (.venv) scheduler # WIP
 # List some code to update: starting with '_'.
@@ -55,6 +56,7 @@ source .venv/bin/activate # for Linux and Mac
 # Plot an input variable against max memory.
 # visualizer --x nsteps
 # visualizer --x nx
+# visualizer --x rho
 
 
 # TODO: visualizer => table correlation

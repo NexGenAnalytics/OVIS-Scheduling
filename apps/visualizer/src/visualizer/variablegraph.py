@@ -11,10 +11,18 @@ def display_vs_graph(variable_name: str):
   memory_values = []
 
   for simulation in simulations:
+    """
+    inputdeck example => [
+      Feature(command='nx', arguments='24'),
+      Feature(command='temp', arguments='1000.0'),
+      Feature(command='nsteps', arguments='300000')
+    ]
+    """
     variables = {
       feature.command: feature.arguments
       for feature in simulation.inputdeck
     }
+    # variable example => {'nx': '24', 'temp': '1000.0', 'nsteps': '300000'}
 
     value = variables.get(variable_name)
 

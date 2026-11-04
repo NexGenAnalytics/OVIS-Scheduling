@@ -4,9 +4,14 @@ from common.loading import load_simulations
 from common.metrics import RESOURCE_METRICS
 from common.Simulation import Simulation
 from .decker import numeric_features
+from .evaluation import evaluate_predictions
+import matplotlib.pyplot as plt
 from .models import RANDOM_SEED
 from pathlib import Path
+from .prediction import define_predict
 from .prepare import prepare_dataset
+from .save import save_model
+from sklearn.metrics import r2_score
 from sklearn.model_selection import train_test_split
 
 def init_parser() -> argparse.Namespace:
@@ -63,24 +68,65 @@ def define_train(path: Path):
       X_train, y_train, X_validation, y_validation)
     display_benchmark(results)
 
-    # TODO: best_result = select_best_model(results)
-    # TODO: print(f"Selected model: {best_result.name}")
+    # Select the best model using validation results.
+    best_result = min(results, key=lambda result: result.scores[0].rmse)
+    print(f"> Selected model (using best validation RMSE): {best_result.name}")
 
-    # Test
+    # Save best model.
+    model_path = save_model(best_result, columns, resource)
+    print(f"> Saved {best_result.name} to {model_path}")
+
+    # Predict on the test set.
     X_test, y_test = prepare_dataset(testing_set, metric, columns)
-    # TODO: test_predictions = best_result.model.predict(X_test)
-    # TODO: test_scores = evaluate_predictions(y_test, test_predictions)
+    test_predictions = best_result.model.predict(X_test)
 
-    # Save model
-    # TODO: model_path = save_model(best_result.model, resource)
-    # TODO: print(f"Saved {best_result.name} to {model_path}")
+    # Memory: kB -> MB. CPU stays in cores.
+    scale = 1000 if resource == "memory" else 1
+    units = "MB" if resource == "memory" else "cores"
 
-    # TODO: Draw graph x = y
+    real = y_test / scale
+    predicted = test_predictions / scale
 
+    score = evaluate_predictions(real, predicted)[0]
+    r2 = r2_score(real, predicted)
 
-def define_predict(path: str):
-  # TODO
-  print("TODO, incoming")
+    print(f"Test MAE: {score.mae:.2f} {units}")
+    print(f"Test RMSE: {score.rmse:.2f} {units}")
+    print(f"Test R²: {r2:.3f}")
+
+    # Use identical limits for both axes.
+    lower = min(real.min(), predicted.min())
+    upper = max(real.max(), predicted.max())
+    padding = max(upper - lower, 1) * 0.05
+    limits = [lower - padding, upper + padding]
+
+    # Figure and plot
+    fig, ax = plt.subplots(figsize=(7, 7))
+
+    ax.scatter(real, predicted, alpha=0.7, label="Test simulations")
+    ax.plot(
+      limits, limits,
+      "--", color="orange", label="Perfect prediction: x = y"
+    )
+
+    ax.set_xlim(limits)
+    ax.set_ylim(limits)
+    ax.set_aspect("equal", adjustable="box")
+
+    ax.set_xlabel(f"Real maximum {resource} ({units})")
+    ax.set_ylabel(f"Predicted maximum {resource} ({units})")
+    ax.set_title(
+      f"{best_result.name} — {resource}\n"
+      f"MAE: {score.mae:.2f} {units} | "
+      f"RMSE: {score.rmse:.2f} {units} | R²: {r2:.3f}"
+    )
+
+    ax.grid(alpha=0.3)
+    ax.set_axisbelow(True)
+    ax.legend()
+
+    fig.tight_layout()
+    plt.show()
 
 
 def main() -> None:
