@@ -50,6 +50,15 @@ source .venv/bin/activate # for Linux and Mac
 (.venv) visualizer --file [problem]/[job_id]/ldms_metrics.csv
 # Display graph.
 # visualizer --file coul_grid_131k_080k_acc1e3_order7/10903766/ldms_metrics.csv
+
+(.venv) visualizer --x [variable_name]
+# Plot an input variable against max memory.
+# visualizer --x nsteps
+# visualizer --x nx
+
+
+# TODO: visualizer => table correlation
+
 ```
 
 ## Architecture
