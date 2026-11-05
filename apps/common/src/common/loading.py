@@ -1,8 +1,7 @@
 from common.Simulation import Simulation
 import csv
-from .metrics import RESOURCE_METRICS
+from .metrics import filter_metric, max_value, RESOURCE_METRICS
 from .parsing import parse_inputdeck
-from visualizer.metrics import filter_metric, max_value
 
 def load_one_simulation(path: str):
   with open(path, newline="") as file:

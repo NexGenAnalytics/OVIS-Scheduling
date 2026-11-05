@@ -1,8 +1,8 @@
 from common.loading import load_one_simulation
+from common.metrics import filter_metric, max_value
 import csv
 import matplotlib.pyplot as plt
 from pathlib import Path
-from visualizer.metrics import max_value, filter_metric
 
 def display_graph(path_file: str):
 

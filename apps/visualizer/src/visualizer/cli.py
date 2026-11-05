@@ -1,8 +1,8 @@
 import argparse
+from common.metrics import filter_metric, max_value
 from .filegraph import display_graph
 from .histogram import display_histogram
 from .variablegraph import display_vs_graph
-from visualizer.metrics import max_value, filter_metric
 
 def define_args():
   parser = argparse.ArgumentParser(description="Plot CPU and memory usage.")

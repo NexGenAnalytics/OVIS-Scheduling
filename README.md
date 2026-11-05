@@ -17,6 +17,10 @@ source .venv/bin/activate # for Linux and Mac
 (.venv) deactivate
 ```
 
+### Setup data
+
+See [this README](./data/README.md).
+
 ### Work session
 
 ```bash
@@ -35,7 +39,7 @@ source .venv/bin/activate # for Linux and Mac
 (.venv) predicter --train data/
 # Training neural network, save best model, display graphs.
 
-(.venv) predicter --predict data/lammps_input_decks/in.[problem]
+(.venv) predicter --predict [path]
 # Use best model to make a prediction.
 # predicter --predict data/lammps_input_decks/in.binary_lj_032k_150k
 
@@ -48,7 +52,7 @@ source .venv/bin/activate # for Linux and Mac
 (.venv) visualizer --hcpu
 # Max CPU histogram.
 
-(.venv) visualizer --file [problem]/[job_id]/ldms_metrics.csv
+(.venv) visualizer --file [path]
 # Display graph.
 # visualizer --file coul_grid_131k_080k_acc1e3_order7/10903766/ldms_metrics.csv
 
@@ -65,43 +69,38 @@ source .venv/bin/activate # for Linux and Mac
 
 ## Architecture
 
-- Apps are in orange.
-- The database tables are blue.
-
-```mermaid
-flowchart LR
-
-  A["LAMMPS results"] --> B["Visualizer (Draw a graph)"]:::apps
-
-  C["Database (List job, get job by id)"]:::apps
-
-  D["Job (ID, name, max CPU, max memory)"]:::table
-
-  classDef apps fill:#FFA400
-  classDef table fill:#02BAF7
-```
-
-## Goal
+- `apps` are in orange.
+- `apps work in progress` are in green.
 
 ```mermaid
 flowchart TB
 
+  A["LAMMPS inputs+results"]
+  B["Visualizer"]:::apps
   C["Database"]:::apps
 
-  D["Job (ID, name, input_deck_hash, max CPU, max memory, execution_time)"]:::table
-  K["TABLE Predict (job_id, predict CPU, predict memory)"]:::table
+  E["Common"]:::apps
+  F["Predicter"]:::apps
+  G["Plots"]
+  H["db.sqlite3"]
+  I["Models"]
+  J["Predictions"]
+  K["Hasher"]:::wip
+  L["Scheduler"]:::wip
+  M["LAMMPS inputs"]
 
-  E["LAMMPS input deck + results"] --> F["Hasher"]:::apps
-  F --> |"Store: Hash + Results"| C
-
-  G["LAMMPS input deck"] --> F
-  F --> |Hash| H["Nearer (Search by hash to get results)"]:::apps
-  H --> |Compare hash| C
-  C --> H
-  H --> |"If value then Predict (max_cpu, max_memory)"| I["Scheduler"]:::apps
-  H ---> |Else| J["Predicter (Neural network)"]:::apps
-  J ---> |"Predict (max_cpu, max_memory)"| I
+  A --> B --> |create| G
+  B --> |use| E
+  F --> |use| E
+  A --> F <--> |train / use| I
+  M --> K --> |store hash| C
+  A --> C --> |store| H
+  F --> |use Models to create| J
+  F <--> |find nearer hash| C
+  F --> |use| K
+  M --> L
 
   classDef apps fill:#FFA400
   classDef table fill:#02BAF7
+  classDef wip fill:#0DD63C
 ```

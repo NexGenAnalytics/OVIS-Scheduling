@@ -1,12 +1,11 @@
 from common.loading import load_simulations
-from common.metrics import RESOURCE_METRICS
+from common.metrics import filter_metric, max_value, RESOURCE_METRICS
 from common.Simulation import Simulation
 import csv
 import math
 import matplotlib.pyplot as plt
 import numpy as np
 from pathlib import Path
-from visualizer.metrics import max_value, filter_metric
 
 def display_histogram(metric: str):
   path: Path = Path("data")
