@@ -2,82 +2,105 @@
 
 `NexGen Analytics` work for Sandia `Open-source Varnish Information System`.
 
-Goal:
+## Commands
 
-* The ability to (A) evaluate simulations in order to (B) predict and, thereby,
-(C) optimize the use of clusters.
-
-Proposed solution:
-
-* (A) Retrieving simulation initial parameters (input decks) along with their run
-profiles (CPU and memory usage). They are identified by a hash.
-
-* (B) Training a neural network based on simulations input decks and retrieved
-run profiles (data).
-
-* (C) Scheduling the simulations to be run, given the input decks and the current
-status of the clusters: using the nearest hash, or using the neural network.
-
-## Apps
-
-- `common`, common tools across apps (`read_file` for example).
-- `database`, store predictions (from `modeling`) and hashs (from `hashing`).
-- `hashing`, [README](./apps/hashing/README.md).
-- `modeling`, create a prediction of CPU and memory usage.
-- `scheduler`, (issue #9).
-
-## How to use
+### Setup and end working session
 
 ```bash
 python3 -m venv .venv
 source .venv/bin/activate # for Linux and Mac
 .\.venv\Scripts\activate # for Windows
-
 (.venv) pip install -r requirements.txt
 
-(.venv) database --list-jobs
-(.venv) database --list-by-method {method_name}
-(.venv) database --get-id {id}
-(.venv) database --get-hash-distance-between {id_A} {id_B}
-
-(.venv) hashing --input {path/to/file} --normalizer {method_name} [--save]
-# see examples below
-# see tests below
-
-(.venv) modeling
-
-(.venv) scheduler --find-nearest-to {path/to/file} {method_name}
+# ... work here (see Work session) ...
 
 (.venv) deactivate
 ```
 
-# Examples
+### Setup data
+
+See [this README](./data/README.md).
+
+### Work session
 
 ```bash
-(.venv) database --list-by-method lammps_in_files
+(.venv) database --list
+# No jobs found.
+# or
+# [for each jobs] { Job( ... ) }
 
-(.venv) hashing --input data/input-decks/TrilinosDebug/config.txt --normalizer cmake_cache_variables
-(.venv) hashing --input data/input-decks/LammpsObstacle/in.obstacle --normalizer lammps_in_files --save
-(.venv) hashing --input data/input-decks/LammpsTracker/in.tracker --normalizer lammps_in_files
+(.venv) database --getid [X]
+# Job not found.
+# or
+# Job( ... )
 
-(.venv) scheduler --find-nearest-to data/input-decks/LammpsNemd/in.nemd lammps_in_files
+(.venv) hasher # WIP
+
+(.venv) predicter --train data/
+# Training neural network, save best model, display graphs.
+
+(.venv) predicter --predict [path]
+# Use best model to make a prediction.
+# predicter --predict data/lammps_input_decks/in.binary_lj_032k_150k
+
+(.venv) scheduler # WIP
+# List some code to update: starting with '_'.
+
+(.venv) visualizer --hmemory
+# Max memory histogram.
+
+(.venv) visualizer --hcpu
+# Max CPU histogram.
+
+(.venv) visualizer --file [path]
+# Display graph.
+# visualizer --file coul_grid_131k_080k_acc1e3_order7/10903766/ldms_metrics.csv
+
+(.venv) visualizer --x [variable_name]
+# Plot an input variable against max memory.
+# visualizer --x nsteps
+# visualizer --x nx
+# visualizer --x rho
+
+
+# TODO: visualizer => table correlation
+
 ```
 
-# Tests
+## Architecture
 
-- `(.venv) python [command] -v` makes the tests verbose.
+- `apps` are in orange.
+- `apps work in progress` are in green.
 
-```bash
-(.venv) python -m unittest discover apps/common/tests
-(.venv) python -m unittest discover apps/database/tests
-(.venv) python -m unittest discover apps/hashing/tests
+```mermaid
+flowchart TB
+
+  A["LAMMPS inputs+results"]
+  B["Visualizer"]:::apps
+  C["Database"]:::apps
+
+  E["Common"]:::apps
+  F["Predicter"]:::apps
+  G["Plots"]
+  H["db.sqlite3"]
+  I["Models"]
+  J["Predictions"]
+  K["Hasher"]:::wip
+  L["Scheduler"]:::wip
+  M["LAMMPS inputs"]
+
+  A --> B --> |create| G
+  B --> |use| E
+  F --> |use| E
+  A --> F <--> |train / use| I
+  M --> K --> |store hash| C
+  A --> C --> |store| H
+  F --> |use Models to create| J
+  F <--> |find nearer hash| C
+  F --> |use| K
+  M --> L
+
+  classDef apps fill:#FFA400
+  classDef table fill:#02BAF7
+  classDef wip fill:#0DD63C
 ```
-
-## Infos
-
-- Entry point for an app is `apps/[name]/src/[name]/cli.py`.
-
-## Devs notes
-
-- In `apps/modeling`, there are some WIP scripts.
-- In `apps/scheduler`, there are some WIP and TODO scripts, to update with new archi.

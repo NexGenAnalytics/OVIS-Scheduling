@@ -6,6 +6,3 @@ def print_jobs(jobs: list[Job]) -> None:
     return
 
   print(*jobs, sep="\n")
-
-def hamming_distance(x: set, y: set):
-  return (x ^ y).bit_count()

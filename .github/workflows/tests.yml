@@ -18,7 +18,10 @@ jobs:
         app:
           - common
           - database
-          - hashing
+          - hasher
+          - predicter
+          - scheduler
+          - visualizer
 
     steps:
       - uses: actions/checkout@v4

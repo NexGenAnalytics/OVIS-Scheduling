@@ -8,21 +8,16 @@ class Job(Base):
   __tablename__ = "jobs"
 
   id: Mapped[int] = mapped_column(Integer, primary_key=True)
-  filename: Mapped[str] = mapped_column(String(255), nullable=False)
-  method: Mapped[str] = mapped_column(String(255), nullable=False)
-
-  normalization: Mapped[set[str]] = mapped_column(
-    MutableSet.as_mutable(PickleType),
-    nullable=False,
-    default=set,
-  )
-
-  simhash32: Mapped[int] = mapped_column(
-    BigInteger,
-    nullable=False
-  )
+  name: Mapped[str] = mapped_column(String(255), nullable=False)
+  max_cpu: Mapped[int] = mapped_column(Integer, nullable=False)
+  max_memory: Mapped[int] = mapped_column(Integer, nullable=False)
 
   def __repr__(self) -> str:
     return (
-      f"Job(id={self.id!r}, filename={self.filename!r}, method={self.method!r}, simhash32={self.simhash32!r})"
+      f"Job("
+      f"id={self.id!r}, "
+      f"name={self.name!r}, "
+      f"max_cpu={self.max_cpu!r}, "
+      f"max_memory={self.max_memory!r}"
+      f")"
     )
