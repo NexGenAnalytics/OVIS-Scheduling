@@ -1,6 +1,6 @@
 import unittest
 
-from visualizer.metrics import filter_metric
+from common.metrics import filter_metric
 
 class TestMetrics(unittest.TestCase):
 

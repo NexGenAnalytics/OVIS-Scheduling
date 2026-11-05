@@ -2,6 +2,6 @@ import unittest
 
 class TestTODO(unittest.TestCase):
 
-  def my_first_test(self) -> None:
+  def test_my_first(self) -> None:
     gold = 12
     self.assertEqual(12, gold)

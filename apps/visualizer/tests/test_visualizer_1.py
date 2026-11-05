@@ -1,6 +1,6 @@
 import unittest
 
-from visualizer.metrics import max_value
+from common.metrics import max_value
 
 class TestMetrics(unittest.TestCase):
 
