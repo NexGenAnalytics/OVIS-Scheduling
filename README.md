@@ -63,8 +63,7 @@ See [this README](./data/README.md).
 # visualizer --x rho
 
 
-# TODO: visualizer => table correlation
-
+(.venv) visualizer --correlation
 ```
 
 ## Architecture

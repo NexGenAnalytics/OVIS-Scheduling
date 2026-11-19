@@ -42,6 +42,7 @@ def load_simulations(path, debug = False):
     job_id = row["job_id"]
     problem = row["problem"]
     filename = f"in.{problem}"
+    particlecount = row["particle_count_final"]
 
     path_inputdeck = path_inputdecks / filename
     path_profile = path_profiles / problem / job_id / "ldms_metrics.csv"
@@ -63,6 +64,7 @@ def load_simulations(path, debug = False):
       maxcpu = int(max_cpu), # cores
       maxmemory = int(max_memory), # kB
       totaltime = int(total_time), # seconds
+      particlecount = int(particlecount), # particles
       inputdeck = inputdeckcontent,
     )
     simulations.append(simulation)

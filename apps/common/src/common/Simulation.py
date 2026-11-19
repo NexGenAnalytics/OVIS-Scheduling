@@ -9,5 +9,6 @@ class Simulation:
   maxcpu: int # cores
   maxmemory: int # kB
   totaltime: int # seconds
+  particlecount: int # particles
   inputdeck: list[Feature]
   #runprofile: list[Metric]
