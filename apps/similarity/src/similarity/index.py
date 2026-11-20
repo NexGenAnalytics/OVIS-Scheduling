@@ -6,6 +6,7 @@ import numpy as np
 
 from common import get_converter
 from .distances import DISTANCES, nearest
+from .evaluate import CUTOFF_PERCENTILE, out_of_fold_nearest
 from .profile import RESOURCES, Dataset, from_targets, resource_scales
 
 @dataclass(frozen=True)
@@ -14,20 +15,27 @@ class SimilarityIndex:
   feature_names: tuple[str, ...]
   dataset: Dataset
   distance: str
-  # One fitted distance per resource, keyed like RESOURCES.
+  # Per resource, keyed like RESOURCES: fitted distance and no-match cutoff.
   fitted: dict[str, object]
+  cutoffs: dict[str, float]
 
 @dataclass(frozen=True)
 class Match:
-  neighbors: list[tuple[str, float]]
+  neighbors: list[str]
+  distance: float
+  cutoff: float
   predicted: float
 
+  @property
+  def matched(self) -> bool:
+    return self.distance <= self.cutoff
+
 def build_index(dataset: Dataset, converter: str, distance: str) -> SimilarityIndex:
-  fitted = {
-    name: DISTANCES[distance]().fit(dataset.X, dataset.targets[:, resource])
-    for resource, name in enumerate(RESOURCES)
-  }
-  return SimilarityIndex(converter, get_converter(converter).feature_names(), dataset, distance, fitted)
+  fitted, cutoffs = {}, {}
+  for resource, name in enumerate(RESOURCES):
+    fitted[name] = DISTANCES[distance]().fit(dataset.X, dataset.targets[:, resource])
+    cutoffs[name] = float(np.percentile(out_of_fold_nearest(dataset, distance, resource), CUTOFF_PERCENTILE))
+  return SimilarityIndex(converter, get_converter(converter).feature_names(), dataset, distance, fitted, cutoffs)
 
 def save_index(index: SimilarityIndex, path: Path) -> None:
   path.parent.mkdir(parents=True, exist_ok=True)
@@ -40,17 +48,19 @@ def load_index(path: Path) -> SimilarityIndex:
   return index
 
 def query(index: SimilarityIndex, content: str, particle_count: float, k: int) -> dict[str, Match]:
-  """Nearest known runs and predicted peak memory (kB), peak CPU (cores) and duration (s) per resource."""
+  """Per resource: inverse-distance-weighted target of the k nearest runs, rescaled to this deck."""
   converter = get_converter(index.converter)
   deck = converter.parse(content)
   x = np.asarray([converter.featurize(deck, particle_count)], dtype=float)
-  scales = np.asarray(resource_scales(converter, deck, particle_count))
+  scales = resource_scales(converter, deck, particle_count)
   matches = {}
   for resource, name in enumerate(RESOURCES):
     distances = index.fitted[name].pairwise(x, index.dataset.X)[0]
     target, indices = nearest(distances, index.dataset.targets[:, resource], k)
     matches[name] = Match(
-      neighbors=[(index.dataset.names[i], float(distances[i])) for i in indices],
+      neighbors=[index.dataset.names[i] for i in indices],
+      distance=float(distances[indices[0]]),
+      cutoff=index.cutoffs[name],
       predicted=float(from_targets(np.asarray(target), scales[resource])),
     )
   return matches

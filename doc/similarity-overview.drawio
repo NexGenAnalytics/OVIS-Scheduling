@@ -1,0 +1,65 @@
+<mxfile host="app.diagrams.net">
+  <diagram name="Predictor vs similarity index" id="overview">
+    <mxGraphModel dx="1200" dy="800" grid="1" gridSize="10" guides="1" tooltips="1" connect="1" arrows="1" fold="1" page="1" pageScale="1" pageWidth="1100" pageHeight="800" math="0" shadow="0">
+      <root>
+        <mxCell id="0"/>
+        <mxCell id="1" parent="0"/>
+
+        <mxCell id="data" value="&lt;b&gt;Known runs (training data)&lt;/b&gt;&lt;br&gt;input deck + particle count&lt;br&gt;+ MEASURED peak memory, CPU, duration" style="rounded=1;whiteSpace=wrap;html=1;fillColor=#dae8fc;strokeColor=#6c8ebf;" vertex="1" parent="1">
+          <mxGeometry x="40" y="60" width="240" height="80" as="geometry"/>
+        </mxCell>
+        <mxCell id="feat" value="&lt;b&gt;Converter&lt;/b&gt;&lt;br&gt;deck text → ~665 numbers&lt;br&gt;(same step for every path)" style="rounded=1;whiteSpace=wrap;html=1;fillColor=#fff2cc;strokeColor=#d6b656;" vertex="1" parent="1">
+          <mxGeometry x="360" y="60" width="220" height="80" as="geometry"/>
+        </mxCell>
+        <mxCell id="e1" style="endArrow=block;html=1;" edge="1" parent="1" source="data" target="feat"><mxGeometry relative="1" as="geometry"/></mxCell>
+
+        <mxCell id="laneA" value="A. Regressor (modeling-training)" style="swimlane;whiteSpace=wrap;html=1;fillColor=#d5e8d4;strokeColor=#82b366;startSize=28;" vertex="1" parent="1">
+          <mxGeometry x="40" y="200" width="500" height="300" as="geometry"/>
+        </mxCell>
+        <mxCell id="a1" value="Fit once: learn a function&lt;br&gt;features → memory / duration" style="rounded=1;whiteSpace=wrap;html=1;" vertex="1" parent="laneA">
+          <mxGeometry x="20" y="50" width="220" height="60" as="geometry"/>
+        </mxCell>
+        <mxCell id="a2" value="Saved model&lt;br&gt;(measured runs no longer needed)" style="shape=cylinder3;whiteSpace=wrap;html=1;boundedLbl=1;backgroundOutline=1;size=10;" vertex="1" parent="laneA">
+          <mxGeometry x="290" y="40" width="180" height="80" as="geometry"/>
+        </mxCell>
+        <mxCell id="a3" value="NEW deck → model" style="rounded=1;whiteSpace=wrap;html=1;fillColor=#f8cecc;strokeColor=#b85450;" vertex="1" parent="laneA">
+          <mxGeometry x="20" y="160" width="220" height="40" as="geometry"/>
+        </mxCell>
+        <mxCell id="a4" value="&lt;b&gt;Output:&lt;/b&gt; one number per resource.&lt;br&gt;No sign of whether this deck&lt;br&gt;resembles anything it was trained on." style="rounded=1;whiteSpace=wrap;html=1;fillColor=#ffffff;" vertex="1" parent="laneA">
+          <mxGeometry x="260" y="150" width="220" height="70" as="geometry"/>
+        </mxCell>
+        <mxCell id="ea1" style="endArrow=block;html=1;" edge="1" parent="laneA" source="a1" target="a2"><mxGeometry relative="1" as="geometry"/></mxCell>
+        <mxCell id="ea2" style="endArrow=block;html=1;" edge="1" parent="laneA" source="a2" target="a3"><mxGeometry relative="1" as="geometry"/></mxCell>
+        <mxCell id="ea3" style="endArrow=block;html=1;" edge="1" parent="laneA" source="a3" target="a4"><mxGeometry relative="1" as="geometry"/></mxCell>
+
+        <mxCell id="laneB" value="B. Similarity index (similarity)" style="swimlane;whiteSpace=wrap;html=1;fillColor=#e1d5e7;strokeColor=#9673a6;startSize=28;" vertex="1" parent="1">
+          <mxGeometry x="570" y="200" width="500" height="300" as="geometry"/>
+        </mxCell>
+        <mxCell id="b1" value="Fit once: learn a distance&lt;br&gt;(which features matter for memory?&lt;br&gt;for duration?)" style="rounded=1;whiteSpace=wrap;html=1;" vertex="1" parent="laneB">
+          <mxGeometry x="20" y="50" width="220" height="60" as="geometry"/>
+        </mxCell>
+        <mxCell id="b2" value="Index = the MEASURED runs&lt;br&gt;+ the distance" style="shape=cylinder3;whiteSpace=wrap;html=1;boundedLbl=1;backgroundOutline=1;size=10;" vertex="1" parent="laneB">
+          <mxGeometry x="290" y="40" width="180" height="80" as="geometry"/>
+        </mxCell>
+        <mxCell id="b3" value="NEW deck → nearest measured runs" style="rounded=1;whiteSpace=wrap;html=1;fillColor=#f8cecc;strokeColor=#b85450;" vertex="1" parent="laneB">
+          <mxGeometry x="20" y="160" width="220" height="40" as="geometry"/>
+        </mxCell>
+        <mxCell id="b4" value="&lt;b&gt;Output:&lt;/b&gt; a number (their measured values,&lt;br&gt;rescaled to the new size) plus&lt;br&gt;&lt;b&gt;which runs&lt;/b&gt; and &lt;b&gt;how far away&lt;/b&gt; they are." style="rounded=1;whiteSpace=wrap;html=1;fillColor=#ffffff;" vertex="1" parent="laneB">
+          <mxGeometry x="260" y="150" width="220" height="70" as="geometry"/>
+        </mxCell>
+        <mxCell id="eb1" style="endArrow=block;html=1;" edge="1" parent="laneB" source="b1" target="b2"><mxGeometry relative="1" as="geometry"/></mxCell>
+        <mxCell id="eb2" style="endArrow=block;html=1;" edge="1" parent="laneB" source="b2" target="b3"><mxGeometry relative="1" as="geometry"/></mxCell>
+        <mxCell id="eb3" style="endArrow=block;html=1;" edge="1" parent="laneB" source="b3" target="b4"><mxGeometry relative="1" as="geometry"/></mxCell>
+
+        <mxCell id="ef1" style="endArrow=block;html=1;exitX=0.3;exitY=1;" edge="1" parent="1" source="feat" target="laneA"><mxGeometry relative="1" as="geometry"/></mxCell>
+        <mxCell id="ef2" style="endArrow=block;html=1;exitX=0.7;exitY=1;" edge="1" parent="1" source="feat" target="laneB"><mxGeometry relative="1" as="geometry"/></mxCell>
+
+        <mxCell id="sched" value="&lt;b&gt;Scheduler decision&lt;/b&gt;&lt;br&gt;Use the number. If the nearest measured run is far away,&lt;br&gt;don't trust it: give the job a node to itself." style="rounded=1;whiteSpace=wrap;html=1;fillColor=#fff2cc;strokeColor=#d6b656;" vertex="1" parent="1">
+          <mxGeometry x="300" y="560" width="500" height="80" as="geometry"/>
+        </mxCell>
+        <mxCell id="es1" style="endArrow=block;html=1;" edge="1" parent="1" source="laneA" target="sched"><mxGeometry relative="1" as="geometry"/></mxCell>
+        <mxCell id="es2" style="endArrow=block;html=1;" edge="1" parent="1" source="laneB" target="sched"><mxGeometry relative="1" as="geometry"/></mxCell>
+      </root>
+    </mxGraphModel>
+  </diagram>
+</mxfile>

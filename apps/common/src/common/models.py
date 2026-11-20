@@ -1,4 +1,4 @@
-from dataclasses import dataclass
+from dataclasses import dataclass, field
 
 @dataclass(frozen=True)
 class DeckConcepts:
@@ -30,11 +30,10 @@ class Feature:
 class Metric:
   timestamp: float
   time_rel_s: float
-  #job_id: int
-  #component_id: int
   metric: str
-  #unit: str
   value: float
+  # Node the sample came from.
+  component_id: int = 0
 
 @dataclass(frozen=True)
 class Simulation:
@@ -48,4 +47,6 @@ class Simulation:
   particlecount: float
   # Problem name from the manifest, e.g. "lj_base_256k_160k_seed".
   name: str = ""
+  # Idle value per node, then per metric, from ldms_baseline.csv; empty when the run has none.
+  baseline: dict[int, dict[str, float]] = field(default_factory=dict)
 

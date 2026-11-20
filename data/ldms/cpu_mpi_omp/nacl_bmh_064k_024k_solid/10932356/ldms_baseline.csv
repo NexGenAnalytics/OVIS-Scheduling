@@ -1,0 +1,9 @@
+job_id,component_id,metric,unit,value,samples
+10932356,5100533,mem_active_kb,kB,85496.0,1
+10932356,5100533,mem_anon_kb,kB,1290620.0,1
+10932356,5100533,mem_anon_huge_kb,kB,1128448.0,1
+10932356,5100533,mem_shmem_kb,kB,37880.0,1
+10932356,5100533,mem_used_kb,kB,4942660.0,1
+10932356,5100533,mem_kernel_kb,kB,675272.0,1
+10932356,5100533,mem_committed_kb,kB,2278400.0,1
+10932356,5100533,mem_cached_kb,kB,149032.0,1

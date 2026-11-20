@@ -1,7 +1,9 @@
-from common.models import Feature, Metric
+from collections import defaultdict
 import csv
 from io import StringIO
 import shlex
+
+from common.models import Feature, Metric
 
 def parse_inputdeck(content: str) -> list[Feature]:
   """
@@ -31,7 +33,14 @@ def parse_inputdeck(content: str) -> list[Feature]:
     raise ValueError("Unterminated input-deck continuation")
   return features
 
-def parse_runprofile(content: str) -> (list[Metric], float):
+def parse_baseline(content: str) -> dict[int, dict[str, float]]:
+  """Idle value per node, then per metric."""
+  baseline: dict[int, dict[str, float]] = defaultdict(dict)
+  for row in csv.DictReader(StringIO(content)):
+    baseline[int(row["component_id"])][row["metric"]] = float(row["value"])
+  return dict(baseline)
+
+def parse_runprofile(content: str) -> tuple[list[Metric], float]:
   metrics: list[Metric] = []
   times = []
 
@@ -42,11 +51,9 @@ def parse_runprofile(content: str) -> (list[Metric], float):
       metric = Metric(
         timestamp=float(row["timestamp"]),
         time_rel_s=float(row["time_rel_s"]),
-        # job_id=int(row["job_id"]),
-        # component_id=int(row["component_id"]),
         metric=row["metric"],
-        # unit=row["unit"],
         value=float(row["value"]),
+        component_id=int(row["component_id"]),
       )
       metrics.append(metric)
       times.append(metric.time_rel_s)
