@@ -1,10 +1,8 @@
 import argparse
 from .benchmark import (display_benchmark, run_benchmark, select_best_model)
-from common import (DECK_FEATURE_NAMES, Feature, Metric, Simulation)
-from common import (parse_inputdeck, parse_runprofile)
+from common import (DECK_FEATURE_NAMES, Simulation, load_simulations)
 from .dataset import prepare_dataset
 from .evaluation import TARGET_NAMES, evaluate_predictions
-import csv
 import joblib
 from .models import RANDOM_SEED
 import numpy as np
@@ -22,70 +20,6 @@ def init_parser() -> argparse.Namespace:
   parser.add_argument("--simu", type=Path, required=True)
   # parser.add_argument("--feat", nargs="+", type=str, required=False)
   return parser.parse_args()
-
-def load_simulations(path: Path) -> list[Simulation]:
-  simulations: list[Simulation] = []
-
-  path_manifest = path / "ldms" / "summary_global.csv"
-  path_inputdecks = path / "input-decks" / "lammps"
-  path_profiles = path / "ldms" / "cpu_mpi_omp"
-
-  with path_manifest.open(newline="", encoding="utf-8") as csv_file:
-    reader = csv.DictReader(csv_file)
-    rows = list(reader)
-    print(f"- Total {len(rows)} files")
-
-    rc_nodes, rc_ntasks, rc_ntasks_per_node, rc_omp_num_threads = 1, 48, 48, 1
-    print(f"- Reference configuration: \
-      nodes={rc_nodes}, \
-      ntasks={rc_ntasks}, \
-      ntasks_per_node={rc_ntasks_per_node} \
-      and omp_num_threads={rc_omp_num_threads}")
-
-    for row in rows:
-      status = row["status"]
-
-      if row["status"] != "ok": continue
-
-      job_id = row["job_id"]
-      problem = row["problem"]
-      filename = f"in.{problem}"
-
-      path_inputdeck = path_inputdecks / filename
-      path_profile = path_profiles / problem / job_id / "ldms_metrics.csv"
-
-      inputdeck_str: str = path_inputdeck.read_text(encoding="utf-8")
-      runprofile_str: str = path_profile.read_text(encoding="utf-8")
-
-      inputdeck_content: list[Feature] = parse_inputdeck(inputdeck_str)
-      runprofile_content, total_time = parse_runprofile(runprofile_str)
-
-      particle_count = row["particle_count"]
-      # particle_count_final = row["particle_count_final"]
-
-      if not (
-        int(row["nodes"]) == rc_nodes
-        and int(row["ntasks"]) == rc_ntasks
-        and int(row["ntasks_per_node"]) == rc_ntasks_per_node
-        and int(row["omp_num_threads"]) == rc_omp_num_threads
-      ):
-        continue
-
-      simulation = Simulation(
-        id = int(job_id),
-        inputdeck = inputdeck_content,
-        runprofile = runprofile_content,
-        totaltime = int(total_time),
-        particlecount = particle_count,
-      )
-      simulations.append(simulation)
-
-      totaltimeminutes = int(simulation.totaltime / 60)
-      # print(f"Load {simulation.id}")
-      # print(f"-> {totaltimeminutes} min for {particle_count} particles.")
-
-  print(f"- Load {len(simulations)} simulations")
-  return simulations
 
 def split_set(simulations: list[Simulation]) -> tuple[
   list[Simulation],

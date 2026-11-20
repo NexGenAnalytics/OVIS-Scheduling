@@ -1,3 +1,4 @@
 -e apps/common
 -e apps/modeling-prediction
 -e apps/modeling-training
+-e apps/similarity

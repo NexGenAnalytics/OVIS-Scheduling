@@ -1,0 +1,12 @@
+[project]
+name = "similarity"
+version = "0.1.0"
+dependencies = [
+  "common==0.1.0",
+  "joblib==1.5.3",
+  "modeling-training==0.1.0",
+  "scikit-learn==1.9.0",
+]
+
+[project.scripts]
+similarity = "similarity.cli:main"
