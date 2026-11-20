@@ -62,6 +62,10 @@ See [this README](./data/README.md).
 # visualizer --x nx
 # visualizer --x rho
 
+(.venv) visualizer --xy [var_1] [var_2]
+# Display graph between features.
+# visualizer --xy nx particlecount
+# visualizer --xy nsteps temp
 
 (.venv) visualizer --correlation
 ```

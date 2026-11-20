@@ -2,6 +2,7 @@ import argparse
 from common.metrics import filter_metric, max_value
 from .correlation import display_correlation
 from .filegraph import display_graph
+from .graphXY import display_xy
 from .histogram import display_histogram
 from .variablegraph import display_vs_graph
 
@@ -16,9 +17,16 @@ def define_args():
   commands.add_argument(
     "--hcpu", dest="histogram_cpu", action="store_true")
   commands.add_argument(
-    "--x", metavar="VARIABLE", help="Plot an input variable against max memory."
+    "--x",
+    metavar="VARIABLE",
+    help="Plot an input variable against max memory."
   )
-  #commands.add_argument("--xy", .... )
+  commands.add_argument(
+    "--xy",
+    nargs=2,
+    metavar=("X_VARIABLE", "Y_VARIABLE"),
+    help="Plot one feature against another."
+  )
   commands.add_argument(
     "--correlation", dest="correlation", action="store_true")
 
@@ -39,7 +47,8 @@ def main() -> None:
       display_histogram("cpu")
     case {"x": str(variable_name)}:
       display_vs_graph(variable_name)
-    # case {"xy": }
+    case {"xy": [x_variable, y_variable]}:
+      display_xy(x_variable, y_variable)
     case {"correlation": True}:
       display_correlation()
 
