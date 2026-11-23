@@ -1,5 +1,16 @@
 from .Feature import Feature
+from collections import defaultdict
+import csv
+from io import StringIO
 import shlex
+
+def parse_baseline(content: str) -> dict[int, dict[str, float]]:
+  """Idle value per node, then per metric."""
+  baseline: dict[int, dict[str, float]] = defaultdict(dict)
+  for row in csv.DictReader(StringIO(content)):
+    comp_id = int(row["component_id"])
+    baseline[comp_id][row["metric"]] = float(row["value"])
+  return dict(baseline)
 
 def parse_inputdeck(content: str) -> list[Feature]:
   features: list[Feature] = []

@@ -3,4 +3,5 @@
 -e apps/hasher
 -e apps/predicter
 -e apps/scheduler
+-e apps/similarity
 -e apps/visualizer

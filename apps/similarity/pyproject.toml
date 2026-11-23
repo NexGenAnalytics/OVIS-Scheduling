@@ -1,0 +1,7 @@
+[project]
+name = "similarity"
+version = "0.1.0"
+dependencies = []
+
+[project.scripts]
+similarity = "similarity.cli:main"

@@ -1,7 +1,7 @@
 from common.Simulation import Simulation
 import csv
 from .metrics import filter_metric, max_value, RESOURCE_METRICS
-from .parsing import parse_inputdeck
+from .parsing import parse_baseline, parse_inputdeck
 
 def load_one_simulation(path: str):
   with open(path, newline="") as file:
@@ -36,16 +36,20 @@ def load_simulations(path, debug = False):
 
   for row in rows:
     status = row["status"]
-
-    if row["status"] != "ok": continue
+    if status != "ok": continue
 
     job_id = row["job_id"]
     problem = row["problem"]
     filename = f"in.{problem}"
+
     particlecount = row["particle_count_final"]
+    if particlecount == '':
+      print(f"!! Job {job_id} has no particle count ...")
+      continue
 
     path_inputdeck = path_inputdecks / filename
     path_profile = path_profiles / problem / job_id / "ldms_metrics.csv"
+    path_baseline = path_profiles / problem / job_id / "ldms_baseline.csv"
 
     inputdeck_str: str = path_inputdeck.read_text(encoding="utf-8")
     inputdeckcontent: list[Feature] = parse_inputdeck(inputdeck_str)
@@ -58,14 +62,21 @@ def load_simulations(path, debug = False):
     max_memory = max_value(memory_values) # kB
     total_time = max_value(cpu_times) # seconds
 
+    if path_baseline.exists():
+      baseline_str: str = path_baseline.read_text(encoding="utf-8")
+      baselinecontent = parse_baseline(baseline_str)
+    else:
+      baselinecontent = {}
+
     simulation = Simulation(
       id = int(job_id),
       name = problem,
       maxcpu = int(max_cpu), # cores
       maxmemory = int(max_memory), # kB
       totaltime = int(total_time), # seconds
-      particlecount = int(particlecount), # particles
+      particlecount = int(float(particlecount)), # particles
       inputdeck = inputdeckcontent,
+      baseline = baselinecontent,
     )
     simulations.append(simulation)
 

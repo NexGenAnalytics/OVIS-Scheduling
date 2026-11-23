@@ -34,7 +34,8 @@ See [this README](./data/README.md).
 # or
 # Job( ... )
 
-(.venv) hasher # WIP
+(.venv) hasher
+# WIP
 
 (.venv) predicter --train data/
 # Training neural network, save best model, display graphs.
@@ -43,7 +44,8 @@ See [this README](./data/README.md).
 # Use best model to make a prediction.
 # predicter --predict data/lammps_input_decks/in.binary_lj_032k_150k
 
-(.venv) scheduler # WIP
+(.venv) scheduler
+# WIP
 # List some code to update: starting with '_'.
 
 (.venv) visualizer --hmemory

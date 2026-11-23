@@ -21,6 +21,7 @@ jobs:
           - hasher
           - predicter
           - scheduler
+          - similarity
           - visualizer
 
     steps:
