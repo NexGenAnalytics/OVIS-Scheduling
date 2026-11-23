@@ -1,7 +1,0 @@
-[project]
-name = "modeling"
-version = "0.1.0"
-dependencies = []
-
-[project.scripts]
-modeling = "modeling.cli:main"

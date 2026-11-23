@@ -1,0 +1,7 @@
+[project]
+name = "hasher"
+version = "0.1.0"
+dependencies = []
+
+[project.scripts]
+hasher = "hasher.cli:main"

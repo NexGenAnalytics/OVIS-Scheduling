@@ -1,5 +1,7 @@
 -e apps/common
 -e apps/database
--e apps/hashing
--e apps/modeling
+-e apps/hasher
+-e apps/predicter
 -e apps/scheduler
+-e apps/similarity
+-e apps/visualizer
